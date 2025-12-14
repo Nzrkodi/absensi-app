@@ -70,11 +70,11 @@
                             @endif
                         </td>
                         <td>
-                            <a href="{{ route('admin.students.edit', $student) }}" class="btn btn-outline-primary">Edit</a>
+                            <a href="{{ route('admin.students.edit', $student) }}" class="btn btn-outline-primary btn-sm">Edit</a>
                                 <form action="{{ route('admin.students.destroy', $student) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus siswa ini?')">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger">Hapus</button>
+                                    <button type="submit" class="btn btn-outline-danger btn-sm">Hapus</button>
                                 </form>
                         </td>
                     </tr>
