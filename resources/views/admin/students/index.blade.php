@@ -20,7 +20,7 @@
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau NIS..." class="form-control form-control">
                 </div>
                 <div class="col-12 col-md-4">
-                    <select name="class_id" class="form-select form-select>
+                    <select name="class_id" class="form-select form-select">
                         <option value="">Semua Kelas</option>
                         @foreach($classes ?? [] as $class)
                             <option value="{{ $class->id }}" {{ request('class_id') == $class->id ? 'selected' : '' }}>
