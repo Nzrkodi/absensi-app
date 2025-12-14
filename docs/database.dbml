@@ -1,0 +1,75 @@
+// Absensi App Database Schema
+// Generated for Laravel 10
+
+Project absensi_app {
+  database_type: 'MySQL'
+  Note: 'Database schema untuk aplikasi absensi karyawan'
+}
+
+Table users {
+  id bigint [pk, increment]
+  name varchar(255) [not null]
+  email varchar(255) [unique, not null]
+  email_verified_at timestamp [null]
+  password varchar(255) [not null]
+  role enum('admin', 'employee') [default: 'employee']
+  remember_token varchar(100) [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table students {
+  id bigint [pk, increment]
+  user_id bigint
+  student_code varchar(50) [unique, not null, note: 'NIP/NIK karyawan']
+  class_id bigint
+  phone varchar(20) [null]
+  address text [null]
+  status enum('active', 'inactive') [default: 'active']
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table classes {
+  id bigint [pk, increment]
+  name varchar(100) [not null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table attendances {
+  id bigint [pk, increment]
+  student_id bigint 
+  date date [not null]
+  clock_in time [null, note: 'Jam masuk']
+  clock_out time [null, note: 'Jam pulang']
+  status enum('present', 'late', 'absent', 'permission', 'sick') [default: 'present']
+  notes text [null]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+
+  indexes {
+    (student_id, date) [unique, note: '1 karyawan hanya bisa absen 1x per hari']
+  }
+}
+
+Table work_schedules {
+  id bigint [pk, increment]
+  name varchar(100) [not null, note: 'Nama shift, misal: Shift Pagi']
+  clock_in_time time [not null, note: 'Jam masuk standar']
+  clock_out_time time [not null, note: 'Jam pulang standar']
+  late_tolerance int [default: 15, note: 'Toleransi keterlambatan dalam menit']
+  is_default boolean [default: false]
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
+
+Table student_schedules {
+  id bigint [pk, increment]
+  student_id bigint
+  work_schedule_id bigint [ref: > work_schedules.id, not null]
+  effective_date date [not null, note: 'Tanggal mulai berlaku']
+  end_date date [null, note: 'Tanggal berakhir, null = masih berlaku']
+  created_at timestamp [null]
+  updated_at timestamp [null]
+}
