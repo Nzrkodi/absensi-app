@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Classes;
 use App\Models\Student;
 use Illuminate\Http\Request;
 
@@ -10,14 +11,27 @@ class StudentController extends Controller
 {
     public function index(Request $request)
     {
-        $students = Student::with(['user', 'class'])
-            ->when($request->search, function ($query, $search) {
-                $query->where('student_code', 'like', "%{$search}%")
-                    ->orWhereHas('user', fn($q) => $q->where('name', 'like', "%{$search}%"));
-            })
-            ->paginate(10);
+        $query = Student::query()
+            ->select('students.*')
+            ->join('users', 'students.user_id', '=', 'users.id')
+            ->leftJoin('classes', 'students.class_id', '=', 'classes.id');
 
-        return view('admin.students.index', compact('students'));
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('students.student_code', 'like', "%{$search}%")
+                    ->orWhere('users.name', 'like', "%{$search}%");
+            });
+        }
+
+        if ($request->filled('class_id')) {
+            $query->where('students.class_id', $request->class_id);
+        }
+
+        $students = $query->with(['user', 'class'])->paginate(10);
+        $classes = Classes::select('id', 'name')->get();
+
+        return view('admin.students.index', compact('students', 'classes'));
     }
 
     public function create()

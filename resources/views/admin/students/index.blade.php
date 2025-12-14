@@ -12,14 +12,25 @@
         </a>
     </div>
     
-    <!-- Search -->
+    <!-- Search & Filter -->
     <div class="card-body bg-light border-bottom">
         <form action="{{ route('admin.students.index') }}" method="GET" class="row g-3">
-            <div class="col">
+            <div class="col-md-5">
                 <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau NIS..." class="form-control">
+            </div>
+            <div class="col-md-4">
+                <select name="class_id" class="form-select">
+                    <option value="">Semua Kelas</option>
+                    @foreach($classes ?? [] as $class)
+                        <option value="{{ $class->id }}" {{ request('class_id') == $class->id ? 'selected' : '' }}>
+                            {{ $class->name }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
             <div class="col-auto">
                 <button type="submit" class="btn btn-secondary">Cari</button>
+                <a href="{{ route('admin.students.index') }}" class="btn btn-outline-secondary">Reset</a>
             </div>
         </form>
     </div>
