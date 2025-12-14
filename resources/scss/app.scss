@@ -8,10 +8,57 @@
     position: fixed;
     left: 0;
     top: 0;
+    z-index: 1040;
+    transition: all 0.3s ease;
+
+    // Collapsed state (desktop)
+    &.collapsed {
+        width: 70px;
+
+        .nav-text,
+        .p-4 > div > p,
+        .p-4 > div > h1 {
+            display: none;
+        }
+
+        .p-4 > div::before {
+            content: "📚";
+            font-size: 1.5rem;
+        }
+
+        .nav-link-sidebar {
+            justify-content: center;
+            padding: 0.75rem;
+
+            svg {
+                margin-right: 0;
+            }
+        }
+    }
 }
 
 .main-content {
     margin-left: 250px;
+    transition: margin-left 0.3s ease;
+
+    &.expanded {
+        margin-left: 70px;
+    }
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1030;
+
+    &.show {
+        display: block;
+    }
 }
 
 .nav-link-sidebar {
@@ -21,21 +68,27 @@
     align-items: center;
     transition: all 0.2s;
     text-decoration: none;
-    
-    &:hover, &.active {
+
+    &:hover,
+    &.active {
         color: #fff;
         background-color: rgba(255, 255, 255, 0.1);
         text-decoration: none;
     }
-    
+
     &.active {
         border-right: 4px solid #fff;
     }
-    
+
     svg {
         width: 20px;
         height: 20px;
         margin-right: 12px;
+        flex-shrink: 0;
+    }
+
+    .nav-text {
+        white-space: nowrap;
     }
 }
 
@@ -46,4 +99,23 @@
     align-items: center;
     justify-content: center;
     font-weight: 600;
+}
+
+// Responsive
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform: translateX(-100%);
+
+        &.show {
+            transform: translateX(0);
+        }
+    }
+
+    .main-content {
+        margin-left: 0;
+
+        &.expanded {
+            margin-left: 0;
+        }
+    }
 }
