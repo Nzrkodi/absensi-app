@@ -1,0 +1,47 @@
+// Bootstrap
+@import "bootstrap/scss/bootstrap";
+
+// Custom styles
+.sidebar {
+    width: 250px;
+    min-height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+}
+
+.main-content {
+    margin-left: 250px;
+}
+
+.nav-link-sidebar {
+    color: rgba(255, 255, 255, 0.8);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    transition: all 0.2s;
+    
+    &:hover, &.active {
+        color: #fff;
+        background-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    &.active {
+        border-right: 4px solid #fff;
+    }
+    
+    svg {
+        width: 20px;
+        height: 20px;
+        margin-right: 12px;
+    }
+}
+
+.avatar-circle {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+}
