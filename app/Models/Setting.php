@@ -35,7 +35,14 @@ class Setting extends Model
      */
     public static function set($key, $value, $type = 'string', $description = null)
     {
-        return self::updateOrCreate(
+        \Log::info('Setting::set called', [
+            'key' => $key,
+            'value' => $value,
+            'type' => $type,
+            'description' => $description
+        ]);
+
+        $result = self::updateOrCreate(
             ['key' => $key],
             [
                 'value' => $value,
@@ -43,6 +50,15 @@ class Setting extends Model
                 'description' => $description
             ]
         );
+
+        \Log::info('Setting::set result', [
+            'key' => $key,
+            'saved_value' => $result->value,
+            'model_id' => $result->id,
+            'was_recently_created' => $result->wasRecentlyCreated
+        ]);
+
+        return $result;
     }
 
     /**

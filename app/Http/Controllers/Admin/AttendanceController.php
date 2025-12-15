@@ -65,8 +65,24 @@ class AttendanceController extends Controller
 
         // Get settings for school start time and late tolerance
         $settings = \App\Models\Setting::getAttendanceSettings();
+        
+        // Debug: Log current settings
+        \Log::info('Clock In Settings', [
+            'school_start_time' => $settings['school_start_time'],
+            'late_tolerance_minutes' => $settings['late_tolerance_minutes'],
+            'current_time' => $now->format('H:i:s'),
+            'date' => $date->format('Y-m-d')
+        ]);
+        
         $schoolStartTime = Carbon::createFromFormat('H:i', $settings['school_start_time'], 'Asia/Makassar')->setDate($date->year, $date->month, $date->day);
         $lateThreshold = $schoolStartTime->copy()->addMinutes($settings['late_tolerance_minutes']);
+        
+        \Log::info('Time Comparison', [
+            'school_start' => $schoolStartTime->format('H:i:s'),
+            'late_threshold' => $lateThreshold->format('H:i:s'),
+            'current_time' => $now->format('H:i:s'),
+            'is_late' => $now->gt($lateThreshold)
+        ]);
         
         $status = $now->gt($lateThreshold) ? 'late' : 'present';
 

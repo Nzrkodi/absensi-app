@@ -26,6 +26,15 @@ class SettingController extends Controller
 
     public function update(Request $request)
     {
+        // Debug: Log incoming request
+        \Log::info('Settings Update Request', [
+            'school_start_time' => $request->school_start_time,
+            'late_tolerance_minutes' => $request->late_tolerance_minutes,
+            'auto_absent_time' => $request->auto_absent_time,
+            'school_name' => $request->school_name,
+            'allow_early_clockin' => $request->has('allow_early_clockin')
+        ]);
+
         $request->validate([
             'school_start_time' => 'required|date_format:H:i',
             'late_tolerance_minutes' => 'required|integer|min:0|max:120',
@@ -36,18 +45,40 @@ class SettingController extends Controller
 
         try {
             // Update attendance settings
-            Setting::set('school_start_time', $request->school_start_time, 'time', 'Waktu mulai sekolah');
-            Setting::set('late_tolerance_minutes', $request->late_tolerance_minutes, 'integer', 'Toleransi keterlambatan dalam menit');
-            Setting::set('auto_absent_time', $request->auto_absent_time, 'time', 'Waktu otomatis menandai siswa absent');
+            $result1 = Setting::set('school_start_time', $request->school_start_time, 'time', 'Waktu mulai sekolah');
+            $result2 = Setting::set('late_tolerance_minutes', $request->late_tolerance_minutes, 'integer', 'Toleransi keterlambatan dalam menit');
+            $result3 = Setting::set('auto_absent_time', $request->auto_absent_time, 'time', 'Waktu otomatis menandai siswa absent');
             
             // Update general settings
-            Setting::set('school_name', $request->school_name, 'string', 'Nama sekolah');
-            Setting::set('allow_early_clockin', $request->has('allow_early_clockin') ? 'true' : 'false', 'boolean', 'Izinkan clock in sebelum jam mulai sekolah');
+            $result4 = Setting::set('school_name', $request->school_name, 'string', 'Nama sekolah');
+            $result5 = Setting::set('allow_early_clockin', $request->has('allow_early_clockin') ? 'true' : 'false', 'boolean', 'Izinkan clock in sebelum jam mulai sekolah');
+
+            // Debug: Log results
+            \Log::info('Settings Update Results', [
+                'school_start_time_saved' => $result1 ? 'success' : 'failed',
+                'late_tolerance_saved' => $result2 ? 'success' : 'failed',
+                'auto_absent_saved' => $result3 ? 'success' : 'failed',
+                'school_name_saved' => $result4 ? 'success' : 'failed',
+                'allow_early_saved' => $result5 ? 'success' : 'failed'
+            ]);
+
+            // Verify settings were saved by checking database directly
+            $savedSettings = [
+                'school_start_time' => Setting::where('key', 'school_start_time')->first()->value ?? 'not found',
+                'late_tolerance_minutes' => Setting::where('key', 'late_tolerance_minutes')->first()->value ?? 'not found',
+                'auto_absent_time' => Setting::where('key', 'auto_absent_time')->first()->value ?? 'not found'
+            ];
+            \Log::info('Settings After Save (Direct DB Check)', $savedSettings);
 
             return redirect()->route('admin.settings.index')
-                ->with('success', 'Pengaturan berhasil disimpan');
+                ->with('success', 'Pengaturan berhasil disimpan. Debug: ' . json_encode($savedSettings));
 
         } catch (\Exception $e) {
+            \Log::error('Settings Update Error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return redirect()->route('admin.settings.index')
                 ->with('error', 'Gagal menyimpan pengaturan: ' . $e->getMessage());
         }
@@ -70,5 +101,26 @@ class SettingController extends Controller
             return redirect()->route('admin.settings.index')
                 ->with('error', 'Gagal mereset pengaturan: ' . $e->getMessage());
         }
+    }
+
+    public function test()
+    {
+        // Test method untuk debug
+        $currentValue = Setting::where('key', 'school_start_time')->first();
+        
+        // Try to update directly
+        $result = Setting::updateOrCreate(
+            ['key' => 'school_start_time'],
+            ['value' => '08:30', 'type' => 'time', 'description' => 'Test update']
+        );
+        
+        $newValue = Setting::where('key', 'school_start_time')->first();
+        
+        return response()->json([
+            'before' => $currentValue ? $currentValue->value : 'not found',
+            'after' => $newValue ? $newValue->value : 'not found',
+            'result_id' => $result->id,
+            'was_recently_created' => $result->wasRecentlyCreated
+        ]);
     }
 }
