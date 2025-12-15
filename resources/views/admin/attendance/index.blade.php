@@ -389,6 +389,73 @@ document.addEventListener('DOMContentLoaded', function() {
                 const row = document.querySelector(`[data-student-id="${currentStudentId}"]`);
                 row.querySelector('.status-badge').innerHTML = data.data.status_badge;
                 
+                // Ensure clock in button is still visible if no clock_in yet
+                const clockInBtn = row.querySelector('.btn-clock-in');
+                const clockOutBtn = row.querySelector('.btn-clock-out');
+                
+                // If no clock in button exists but should exist (status is sick/permission but no clock_in)
+                if (!clockInBtn && !clockOutBtn && (data.data.status === 'sick' || data.data.status === 'permission')) {
+                    const actionDiv = row.querySelector('.d-flex.gap-1, .d-flex.gap-2');
+                    if (actionDiv) {
+                        const newClockInBtn = document.createElement('button');
+                        newClockInBtn.type = 'button';
+                        newClockInBtn.className = 'btn btn-success btn-sm btn-clock-in';
+                        newClockInBtn.setAttribute('data-student-id', currentStudentId);
+                        newClockInBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Clock In';
+                        
+                        // Insert before note button
+                        const noteBtn = actionDiv.querySelector('.btn-note');
+                        if (noteBtn) {
+                            actionDiv.insertBefore(newClockInBtn, noteBtn);
+                            
+                            // Add event listener to new button
+                            newClockInBtn.addEventListener('click', function() {
+                                // Add clock in functionality (reuse existing logic)
+                                const studentId = this.getAttribute('data-student-id');
+                                const originalText = this.innerHTML;
+                                
+                                // Show loading
+                                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Loading...';
+                                this.disabled = true;
+                                
+                                fetch(`/admin/attendance/${studentId}/clock-in`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                                    }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        // Update UI
+                                        const row = document.querySelector(`[data-student-id="${studentId}"]`);
+                                        row.querySelector('.clock-in-time').textContent = data.data.clock_in;
+                                        row.querySelector('.status-badge').innerHTML = data.data.status_badge;
+                                        
+                                        // Change button to clock out
+                                        this.className = 'btn btn-warning btn-sm btn-clock-out';
+                                        this.innerHTML = '<i class="fas fa-sign-out-alt"></i> Clock Out';
+                                        
+                                        showToast('success', data.message);
+                                    } else {
+                                        showToast('error', data.message);
+                                        this.innerHTML = originalText;
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    showToast('error', 'Terjadi kesalahan saat clock in');
+                                    this.innerHTML = originalText;
+                                })
+                                .finally(() => {
+                                    this.disabled = false;
+                                });
+                            });
+                        }
+                    }
+                }
+                
                 // Hide modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('noteModal'));
                 modal.hide();
