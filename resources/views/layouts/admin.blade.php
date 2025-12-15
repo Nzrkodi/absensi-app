@@ -5,7 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin') - Absensi Siswa</title>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-light">
     <div class="d-flex min-vh-100">
@@ -35,12 +39,12 @@
                     <span class="nav-text">Dashboard</span>
                 </a>
                 
-                <a href="{{ route('admin.attendances.index') }}" 
-                   class="nav-link-sidebar {{ request()->routeIs('admin.attendances.*') ? 'active' : '' }}">
+                <a href="{{ route('admin.attendance.index') }}" 
+                   class="nav-link-sidebar {{ request()->routeIs('admin.attendance.*') ? 'active' : '' }}">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                     </svg>
-                    <span class="nav-text">Attendance</span>
+                    <span class="nav-text">Absensi</span>
                 </a>
                 
                 <a href="{{ route('admin.students.index') }}" 
@@ -100,17 +104,31 @@
             <!-- Page Content -->
             <main class="p-4">
                 @if(session('success'))
-                    <div class="alert alert-success alert-dismissible fade show" role="alert">
-                        {{ session('success') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            Swal.fire({
+                                title: 'Berhasil!',
+                                text: '{{ session('success') }}',
+                                icon: 'success',
+                                confirmButtonColor: '#198754',
+                                confirmButtonText: 'OK'
+                            });
+                        });
+                    </script>
                 @endif
 
                 @if(session('error'))
-                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                        {{ session('error') }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            Swal.fire({
+                                title: 'Error!',
+                                text: '{{ session('error') }}',
+                                icon: 'error',
+                                confirmButtonColor: '#dc3545',
+                                confirmButtonText: 'OK'
+                            });
+                        });
+                    </script>
                 @endif
 
                 @yield('content')
@@ -148,6 +166,33 @@
                 mainContent.classList.toggle('expanded');
             });
         });
+
+        // SweetAlert Delete Confirmation
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('btn-delete') || e.target.closest('.btn-delete')) {
+                e.preventDefault();
+                
+                const button = e.target.classList.contains('btn-delete') ? e.target : e.target.closest('.btn-delete');
+                const form = button.closest('form');
+                
+                Swal.fire({
+                    title: 'Apakah Anda yakin?',
+                    text: "Data yang dihapus tidak dapat dikembalikan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Ya, Hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit();
+                    }
+                });
+            }
+        });
     </script>
+    
+    @stack('scripts')
 </body>
 </html>

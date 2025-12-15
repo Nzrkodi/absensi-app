@@ -12,7 +12,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
+        // Update absent students every day at 3 PM (15:00)
+        $schedule->command('attendance:update-absent')
+                 ->dailyAt('15:00')
+                 ->timezone('Asia/Jakarta');
     }
 
     /**

@@ -24,7 +24,14 @@ Route::get('/', function () {
 // Admin Routes
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
-    Route::resource('attendances', AttendanceController::class);
+    
+    // Attendance routes
+    Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('/attendance/{student}/clock-in', [AttendanceController::class, 'clockIn'])->name('attendance.clock-in');
+    Route::post('/attendance/{student}/clock-out', [AttendanceController::class, 'clockOut'])->name('attendance.clock-out');
+    Route::post('/attendance/{student}/note', [AttendanceController::class, 'updateNote'])->name('attendance.note');
+    Route::get('/attendance/{student}/data/{date?}', [AttendanceController::class, 'getAttendanceData'])->name('attendance.data');
+    
     Route::resource('students', StudentController::class);
     Route::resource('users', UserController::class);
 });
