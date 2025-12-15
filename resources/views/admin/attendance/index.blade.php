@@ -96,11 +96,11 @@
                         </td>
                         <td>
                             <div class="d-flex gap-1 flex-wrap">
-                                @if(!$attendance || (!$attendance->clock_in && in_array($attendance->status ?? 'present', ['present', 'late'])))
+                                @if(!$attendance || !$attendance->clock_in)
                                     <button type="button" class="btn btn-success btn-sm btn-clock-in" data-student-id="{{ $student->id }}">
                                         <i class="fas fa-sign-in-alt"></i> Clock In
                                     </button>
-                                @elseif($attendance && $attendance->clock_in && !$attendance->clock_out && $attendance->status === 'present')
+                                @elseif($attendance && $attendance->clock_in && !$attendance->clock_out)
                                     <button type="button" class="btn btn-warning btn-sm btn-clock-out" data-student-id="{{ $student->id }}">
                                         <i class="fas fa-sign-out-alt"></i> Clock Out
                                     </button>
@@ -158,11 +158,11 @@
                 </div>
                 
                 <div class="d-flex gap-2 flex-wrap">
-                    @if(!$attendance || (!$attendance->clock_in && in_array($attendance->status ?? 'present', ['present', 'late'])))
+                    @if(!$attendance || !$attendance->clock_in)
                         <button type="button" class="btn btn-success btn-sm btn-clock-in" data-student-id="{{ $student->id }}">
                             <i class="fas fa-sign-in-alt"></i> Clock In
                         </button>
-                    @elseif($attendance && $attendance->clock_in && !$attendance->clock_out && $attendance->status === 'present')
+                    @elseif($attendance && $attendance->clock_in && !$attendance->clock_out)
                         <button type="button" class="btn btn-warning btn-sm btn-clock-out" data-student-id="{{ $student->id }}">
                             <i class="fas fa-sign-out-alt"></i> Clock Out
                         </button>

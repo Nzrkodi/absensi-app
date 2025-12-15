@@ -75,9 +75,11 @@ class AttendanceController extends Controller
                 'status' => $status
             ]);
         } else {
+            // Update clock_in and status, regardless of previous status
             $attendance->update([
                 'clock_in' => $now->format('H:i:s'),
-                'status' => $status
+                'status' => $status,
+                'notes' => $attendance->status === 'absent' ? 'Clock in setelah ditandai absent' : $attendance->notes
             ]);
         }
 

@@ -55,11 +55,11 @@ class Attendance extends Model
 
     public function canClockOut()
     {
-        return $this->clock_in && !$this->clock_out && $this->status === 'present';
+        return $this->clock_in && !$this->clock_out;
     }
 
     public function canClockIn()
     {
-        return !$this->clock_in && in_array($this->status, ['present', 'late']);
+        return !$this->clock_in;
     }
 }

@@ -12,11 +12,12 @@
 
 ### 2. Tombol Clock In/Clock Out
 - **Clock In**: 
-  - Muncul ketika siswa belum absen
+  - Muncul ketika siswa belum melakukan clock in (apapun statusnya)
   - Otomatis menentukan status "present" atau "late" berdasarkan waktu
+  - Bisa mengubah status "absent/sick/permission" menjadi "present/late" jika siswa datang
   - Setelah clock in, tombol berubah menjadi "Clock Out"
 - **Clock Out**:
-  - Muncul setelah siswa melakukan clock in
+  - Muncul setelah siswa melakukan clock in (apapun statusnya)
   - Mencatat waktu pulang siswa
   - Setelah clock out, tombol hilang
 
