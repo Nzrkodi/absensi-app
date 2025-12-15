@@ -40,7 +40,6 @@ class SettingController extends Controller
             'late_tolerance_minutes' => 'required|integer|min:0|max:120',
             'auto_absent_time' => 'required|date_format:H:i',
             'school_name' => 'required|string|max:255',
-            'allow_early_clockin' => 'boolean'
         ]);
 
         try {
@@ -71,7 +70,7 @@ class SettingController extends Controller
             \Log::info('Settings After Save (Direct DB Check)', $savedSettings);
 
             return redirect()->route('admin.settings.index')
-                ->with('success', 'Pengaturan berhasil disimpan. Debug: ' . json_encode($savedSettings));
+                ->with('success', 'Pengaturan berhasil disimpan.');
 
         } catch (\Exception $e) {
             \Log::error('Settings Update Error', [

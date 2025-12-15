@@ -38,6 +38,7 @@ class Attendance extends Model
             'absent' => '<span class="badge bg-danger">Tidak Hadir</span>',
             'permission' => '<span class="badge bg-info">Izin</span>',
             'sick' => '<span class="badge bg-secondary">Sakit</span>',
+            'bolos' => '<span class="badge bg-dark">Bolos</span>',
         ];
 
         return $badges[$this->status] ?? '<span class="badge bg-light">Unknown</span>';
