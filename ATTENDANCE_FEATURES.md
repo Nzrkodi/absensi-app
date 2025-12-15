@@ -10,6 +10,15 @@
   - Tombol Clock In/Clock Out untuk setiap siswa
   - Tombol Note untuk menambahkan status sakit/izin
 
+### 2. Pengaturan Sistem (BARU!)
+- **URL**: `/admin/settings`
+- **Fitur**:
+  - Setting waktu mulai sekolah (fleksibel)
+  - Setting toleransi keterlambatan (dalam menit)
+  - Setting waktu auto absent
+  - Setting nama sekolah
+  - Setting izin clock in sebelum jam mulai
+
 ### 2. Tombol Clock In/Clock Out
 - **Clock In**: 
   - Muncul ketika siswa belum melakukan clock in (apapun statusnya)
@@ -29,9 +38,10 @@
 - **Otomatis disabled** setelah siswa clock out (absensi sudah lengkap)
 
 ### 4. Job Scheduler Otomatis
-- **Waktu**: Setiap hari jam 15:00 (3 sore)
+- **Waktu**: Sesuai setting (default jam 15:00)
 - **Fungsi**: Mengupdate status siswa yang tidak clock in/out menjadi "absent"
 - **Command manual**: `php artisan attendance:update-absent`
+- **Fleksibel**: Waktu bisa diubah melalui menu Settings
 
 ## Status Absensi
 - **Present** (Hadir): Siswa clock in tepat waktu

@@ -32,6 +32,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/attendance/{student}/note', [AttendanceController::class, 'updateNote'])->name('attendance.note');
     Route::get('/attendance/{student}/data/{date?}', [AttendanceController::class, 'getAttendanceData'])->name('attendance.data');
     
+    // Settings routes
+    Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
+    Route::put('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+    Route::post('/settings/reset', [\App\Http\Controllers\Admin\SettingController::class, 'reset'])->name('settings.reset');
+    
     Route::resource('students', StudentController::class);
     Route::resource('users', UserController::class);
 });

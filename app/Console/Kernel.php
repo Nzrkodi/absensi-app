@@ -12,9 +12,10 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Update absent students every day at 3 PM (15:00)
+        // Update absent students based on setting time
+        $autoAbsentTime = \App\Models\Setting::get('auto_absent_time', '15:00');
         $schedule->command('attendance:update-absent')
-                 ->dailyAt('15:00')
+                 ->dailyAt($autoAbsentTime)
                  ->timezone('Asia/Makassar');
     }
 

@@ -27,6 +27,9 @@ class UpdateAbsentStudents implements ShouldQueue
     {
         $today = \Carbon\Carbon::today('Asia/Makassar');
         
+        // Get auto absent time from settings
+        $autoAbsentTime = \App\Models\Setting::get('auto_absent_time', '15:00');
+        
         // Get all active students
         $activeStudents = \App\Models\Student::where('status', 'active')->get();
         

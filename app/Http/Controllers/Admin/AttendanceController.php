@@ -63,9 +63,12 @@ class AttendanceController extends Controller
             ]);
         }
 
-        // Determine status based on time (assuming school starts at 07:00)
-        $schoolStartTime = Carbon::today('Asia/Makassar')->setTime(7, 0);
-        $status = $now->gt($schoolStartTime->copy()->addMinutes(15)) ? 'late' : 'present';
+        // Get settings for school start time and late tolerance
+        $settings = \App\Models\Setting::getAttendanceSettings();
+        $schoolStartTime = Carbon::createFromFormat('H:i', $settings['school_start_time'], 'Asia/Makassar')->setDate($date->year, $date->month, $date->day);
+        $lateThreshold = $schoolStartTime->copy()->addMinutes($settings['late_tolerance_minutes']);
+        
+        $status = $now->gt($lateThreshold) ? 'late' : 'present';
 
         if (!$attendance) {
             $attendance = Attendance::create([
