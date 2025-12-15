@@ -12,7 +12,7 @@ class AttendanceController extends Controller
 {
     public function index(Request $request)
     {
-        $date = $request->get('date', Carbon::today()->format('Y-m-d'));
+        $date = $request->get('date', Carbon::today('Asia/Jakarta')->format('Y-m-d'));
         
         $query = Student::query()
             ->select('students.*')
@@ -48,8 +48,8 @@ class AttendanceController extends Controller
 
     public function clockIn(Request $request, Student $student)
     {
-        $date = Carbon::today();
-        $now = Carbon::now();
+        $date = Carbon::today('Asia/Jakarta');
+        $now = Carbon::now('Asia/Jakarta');
         
         // Check if attendance already exists for today
         $attendance = Attendance::where('student_id', $student->id)
@@ -64,7 +64,7 @@ class AttendanceController extends Controller
         }
 
         // Determine status based on time (assuming school starts at 07:00)
-        $schoolStartTime = Carbon::today()->setTime(7, 0);
+        $schoolStartTime = Carbon::today('Asia/Jakarta')->setTime(7, 0);
         $status = $now->gt($schoolStartTime->copy()->addMinutes(15)) ? 'late' : 'present';
 
         if (!$attendance) {
@@ -96,8 +96,8 @@ class AttendanceController extends Controller
 
     public function clockOut(Request $request, Student $student)
     {
-        $date = Carbon::today();
-        $now = Carbon::now();
+        $date = Carbon::today('Asia/Jakarta');
+        $now = Carbon::now('Asia/Jakarta');
         
         $attendance = Attendance::where('student_id', $student->id)
             ->where('date', $date)
@@ -137,7 +137,7 @@ class AttendanceController extends Controller
             'notes' => 'required|string|max:500'
         ]);
 
-        $date = Carbon::today();
+        $date = Carbon::today('Asia/Jakarta');
         
         $attendance = Attendance::updateOrCreate(
             [
@@ -163,7 +163,7 @@ class AttendanceController extends Controller
 
     public function getAttendanceData(Student $student, $date = null)
     {
-        $date = $date ?: Carbon::today()->format('Y-m-d');
+        $date = $date ?: Carbon::today('Asia/Jakarta')->format('Y-m-d');
         
         $attendance = Attendance::where('student_id', $student->id)
             ->where('date', $date)
