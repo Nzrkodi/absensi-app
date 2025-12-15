@@ -15,7 +15,7 @@ class Kernel extends ConsoleKernel
         // Update absent students every day at 3 PM (15:00)
         $schedule->command('attendance:update-absent')
                  ->dailyAt('15:00')
-                 ->timezone('Asia/Jakarta');
+                 ->timezone('Asia/Makassar');
     }
 
     /**

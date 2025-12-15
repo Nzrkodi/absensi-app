@@ -25,7 +25,7 @@ class UpdateAbsentStudents implements ShouldQueue
      */
     public function handle(): void
     {
-        $today = \Carbon\Carbon::today('Asia/Jakarta');
+        $today = \Carbon\Carbon::today('Asia/Makassar');
         
         // Get all active students
         $activeStudents = \App\Models\Student::where('status', 'active')->get();
