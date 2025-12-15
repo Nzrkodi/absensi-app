@@ -106,9 +106,15 @@
                                     </button>
                                 @endif
                                 
-                                <button type="button" class="btn btn-info btn-sm btn-note" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#noteModal">
-                                    <i class="fas fa-sticky-note"></i> Note
-                                </button>
+                                @if(!$attendance || !$attendance->clock_out)
+                                    <button type="button" class="btn btn-info btn-sm btn-note" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#noteModal">
+                                        <i class="fas fa-sticky-note"></i> Note
+                                    </button>
+                                @else
+                                    <button type="button" class="btn btn-secondary btn-sm" disabled title="Absensi sudah lengkap">
+                                        <i class="fas fa-sticky-note"></i> Note
+                                    </button>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -168,9 +174,15 @@
                         </button>
                     @endif
                     
-                    <button type="button" class="btn btn-info btn-sm btn-note" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#noteModal">
-                        <i class="fas fa-sticky-note"></i> Note
-                    </button>
+                    @if(!$attendance || !$attendance->clock_out)
+                        <button type="button" class="btn btn-info btn-sm btn-note" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#noteModal">
+                            <i class="fas fa-sticky-note"></i> Note
+                        </button>
+                    @else
+                        <button type="button" class="btn btn-secondary btn-sm" disabled title="Absensi sudah lengkap">
+                            <i class="fas fa-sticky-note"></i> Note
+                        </button>
+                    @endif
                 </div>
             </div>
             @empty
@@ -309,8 +321,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     const row = document.querySelector(`[data-student-id="${studentId}"]`);
                     row.querySelector('.clock-out-time').textContent = data.data.clock_out;
                     
-                    // Remove button
+                    // Remove clock out button
                     this.remove();
+                    
+                    // Disable note button
+                    const noteButton = row.querySelector('.btn-note');
+                    if (noteButton) {
+                        noteButton.className = 'btn btn-secondary btn-sm';
+                        noteButton.disabled = true;
+                        noteButton.title = 'Absensi sudah lengkap';
+                        noteButton.removeAttribute('data-bs-toggle');
+                        noteButton.removeAttribute('data-bs-target');
+                    }
                     
                     showToast('success', data.message);
                 } else {

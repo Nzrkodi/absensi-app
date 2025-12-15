@@ -26,6 +26,7 @@
 - Form modal dengan pilihan:
   - Status: Sakit atau Izin
   - Keterangan: Deskripsi alasan
+- **Otomatis disabled** setelah siswa clock out (absensi sudah lengkap)
 
 ### 4. Job Scheduler Otomatis
 - **Waktu**: Setiap hari jam 15:00 (3 sore)
