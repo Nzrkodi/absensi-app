@@ -42,6 +42,16 @@
 - **Fungsi**: Mengupdate status siswa yang tidak clock in/out menjadi "absent"
 - **Command manual**: `php artisan attendance:update-absent`
 - **Fleksibel**: Waktu bisa diubah melalui menu Settings
+- **Smart Holiday Detection**: Otomatis skip di hari libur
+
+### 5. Manajemen Hari Libur (BARU!)
+- **URL**: `/admin/holidays`
+- **Fitur**:
+  - Tambah/edit/hapus hari libur
+  - Jenis libur: Nasional, Sekolah, Weekend
+  - Auto-generate weekend untuk setahun
+  - Status aktif/nonaktif
+  - Cek status hari ini real-time
 
 ## Status Absensi
 - **Present** (Hadir): Siswa clock in tepat waktu

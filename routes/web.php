@@ -38,6 +38,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/settings/reset', [\App\Http\Controllers\Admin\SettingController::class, 'reset'])->name('settings.reset');
     Route::get('/settings/test', [\App\Http\Controllers\Admin\SettingController::class, 'test'])->name('settings.test');
     
+    // Holiday routes
+    Route::get('/holidays', [\App\Http\Controllers\Admin\HolidayController::class, 'index'])->name('holidays.index');
+    Route::post('/holidays', [\App\Http\Controllers\Admin\HolidayController::class, 'store'])->name('holidays.store');
+    Route::put('/holidays/{holiday}', [\App\Http\Controllers\Admin\HolidayController::class, 'update'])->name('holidays.update');
+    Route::delete('/holidays/{holiday}', [\App\Http\Controllers\Admin\HolidayController::class, 'destroy'])->name('holidays.destroy');
+    Route::patch('/holidays/{holiday}/toggle', [\App\Http\Controllers\Admin\HolidayController::class, 'toggle'])->name('holidays.toggle');
+    Route::post('/holidays/weekends', [\App\Http\Controllers\Admin\HolidayController::class, 'createWeekends'])->name('holidays.weekends');
+    Route::get('/holidays/check-today', [\App\Http\Controllers\Admin\HolidayController::class, 'checkToday'])->name('holidays.check-today');
+    
     Route::resource('students', StudentController::class);
     Route::resource('users', UserController::class);
 });

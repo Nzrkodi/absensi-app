@@ -27,6 +27,13 @@ class UpdateAbsentStudents implements ShouldQueue
     {
         $today = \Carbon\Carbon::today('Asia/Makassar');
         
+        // Check if today is a holiday
+        if (\App\Models\Holiday::isTodayHoliday()) {
+            $holiday = \App\Models\Holiday::getHoliday($today);
+            \Illuminate\Support\Facades\Log::info("Skipping absent update - Today is a holiday: {$holiday->name}");
+            return;
+        }
+        
         // Get auto absent time from settings
         $autoAbsentTime = \App\Models\Setting::get('auto_absent_time', '15:00');
         
