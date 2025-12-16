@@ -32,6 +32,13 @@ class StudentController extends Controller
         $students = $query->orderBy('users.name', 'asc')->with(['user', 'class'])->paginate(10);
         $classes = Classes::select('id', 'name')->get();
 
+        // Handle AJAX request for reports filter
+        if ($request->ajax || $request->get('ajax')) {
+            return response()->json([
+                'students' => $students->items()
+            ]);
+        }
+
         return view('admin.students.index', compact('students', 'classes'));
     }
 

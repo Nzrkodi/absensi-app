@@ -47,6 +47,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/holidays/weekends', [\App\Http\Controllers\Admin\HolidayController::class, 'createWeekends'])->name('holidays.weekends');
     Route::get('/holidays/check-today', [\App\Http\Controllers\Admin\HolidayController::class, 'checkToday'])->name('holidays.check-today');
     
+    // Report routes
+    Route::get('/reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/student/{student}', [\App\Http\Controllers\Admin\ReportController::class, 'student'])->name('reports.student');
+    Route::get('/reports/export', [\App\Http\Controllers\Admin\ReportController::class, 'export'])->name('reports.export');
+    
     Route::resource('students', StudentController::class);
     Route::resource('users', UserController::class);
 });

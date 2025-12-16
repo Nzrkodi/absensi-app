@@ -53,6 +53,16 @@
   - Status aktif/nonaktif
   - Cek status hari ini real-time
 
+### 6. Laporan Absensi (BARU!)
+- **URL**: `/admin/reports`
+- **Fitur**:
+  - Laporan absensi per periode
+  - Filter berdasarkan kelas dan siswa
+  - Statistik kehadiran lengkap
+  - Detail laporan per siswa
+  - Export ke CSV
+  - Progress chart kehadiran
+
 ## Status Absensi
 - **Present** (Hadir): Siswa clock in tepat waktu
 - **Late** (Terlambat): Siswa clock in setelah jam 07:15
