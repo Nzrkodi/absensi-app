@@ -32,7 +32,7 @@
         <form action="{{ route('admin.students.index') }}" method="GET">
             <div class="row g-2">
                 <div class="col-12 col-md-5">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau NIS..." class="form-control form-control">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau NISN..." class="form-control form-control">
                 </div>
                 <div class="col-12 col-md-4">
                     <select name="class_id" class="form-select form-select">
@@ -61,41 +61,43 @@
                 <thead class="table-light">
                     <tr>
                         <th>No</th>
-                        <th>Kode Siswa</th>
                         <th>Nama</th>
                         <th>Kelas</th>
-                        <th>Telepon</th>
-                        <th>Status</th>
+                        <th>NISN</th>
+                        <th>Tempat, Tanggal Lahir</th>
+                        <th>Alamat</th>
+                        <th>No Handphone</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($students ?? [] as $index => $student)
                     <tr>
-                        <td>{{ $students->firstItem() + $index }}</td>
-                        <td>{{ $student->student_code }}</td>
+                        <td>{{ $index + 1 }}</td>
                         <td>{{ $student->user->name ?? '-' }}</td>
                         <td>{{ $student->class->name ?? '-' }}</td>
-                        <td>{{ $student->phone ?? '-' }}</td>
+                        <td>{{ $student->nisn ?? '-' }}</td>
                         <td>
-                            @if($student->status === 'active')
-                                <span class="badge bg-success">Aktif</span>
+                            @if($student->birth_place && $student->birth_date)
+                                {{ $student->birth_place }}, {{ $student->birth_date->format('d/m/Y') }}
                             @else
-                                <span class="badge bg-danger">Tidak Aktif</span>
+                                -
                             @endif
                         </td>
+                        <td>{{ $student->address ?? '-' }}</td>
+                        <td>{{ $student->phone ?? '-' }}</td>
                         <td>
                             <button type="button" class="btn btn-outline-primary btn-sm btn-edit" data-student-id="{{ $student->id }}">Edit</button>
-                                <form action="{{ route('admin.students.destroy', $student) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-outline-danger btn-sm btn-delete">Hapus</button>
-                                </form>
+                            <form action="{{ route('admin.students.destroy', $student) }}" method="POST" class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-outline-danger btn-sm btn-delete">Hapus</button>
+                            </form>
                         </td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="text-center text-muted py-4">Belum ada data siswa</td>
+                        <td colspan="8" class="text-center text-muted py-4">Belum ada data siswa</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -109,13 +111,8 @@
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <h6 class="mb-1">{{ $student->user->name ?? '-' }}</h6>
-                        <small class="text-muted">{{ $student->student_code }}</small>
+                        <small class="text-muted">NISN: {{ $student->nisn ?? '-' }}</small>
                     </div>
-                    @if($student->status === 'active')
-                        <span class="badge bg-success">Aktif</span>
-                    @else
-                        <span class="badge bg-danger">Tidak Aktif</span>
-                    @endif
                 </div>
                 <div class="row g-2 small text-muted mb-2">
                     <div class="col-6">
@@ -123,6 +120,17 @@
                     </div>
                     <div class="col-6">
                         <strong>Telepon:</strong> {{ $student->phone ?? '-' }}
+                    </div>
+                    <div class="col-12">
+                        <strong>TTL:</strong> 
+                        @if($student->birth_place && $student->birth_date)
+                            {{ $student->birth_place }}, {{ $student->birth_date->format('d/m/Y') }}
+                        @else
+                            -
+                        @endif
+                    </div>
+                    <div class="col-12">
+                        <strong>Alamat:</strong> {{ $student->address ?? '-' }}
                     </div>
                 </div>
                 <div class="d-flex gap-2">
@@ -139,11 +147,7 @@
             @endforelse
         </div>
 
-        @if($students instanceof \Illuminate\Pagination\LengthAwarePaginator && $students->hasPages())
-        <div class="p-3">
-            {{ $students->links() }}
-        </div>
-        @endif
+
     </div>
 </div>
 
@@ -166,13 +170,8 @@
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-6">
-                            <label for="edit_email" class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="edit_email" name="email" required>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="edit_student_code" class="form-label">Kode Siswa/NIS <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="edit_student_code" name="student_code" required>
+                            <label for="edit_nisn" class="form-label">NISN <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_nisn" name="nisn" required>
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-6">
@@ -186,8 +185,18 @@
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-6">
-                            <label for="edit_phone" class="form-label">Nomor Telepon</label>
-                            <input type="text" class="form-control" id="edit_phone" name="phone">
+                            <label for="edit_birth_place" class="form-label">Tempat Lahir <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_birth_place" name="birth_place" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_birth_date" class="form-label">Tanggal Lahir <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="edit_birth_date" name="birth_date" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="edit_phone" class="form-label">No Handphone <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="edit_phone" name="phone" required>
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-6">
@@ -200,8 +209,8 @@
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-12">
-                            <label for="edit_address" class="form-label">Alamat</label>
-                            <textarea class="form-control" id="edit_address" name="address" rows="3"></textarea>
+                            <label for="edit_address" class="form-label">Alamat <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="edit_address" name="address" rows="3" required></textarea>
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
@@ -236,13 +245,8 @@
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-6">
-                            <label for="email" class="form-label">Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" id="email" name="email" required>
-                            <div class="invalid-feedback"></div>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="student_code" class="form-label">Kode Siswa/NIS <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" id="student_code" name="student_code" required>
+                            <label for="nisn" class="form-label">NISN <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="nisn" name="nisn" required>
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-6">
@@ -256,8 +260,18 @@
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-6">
-                            <label for="phone" class="form-label">Nomor Telepon</label>
-                            <input type="text" class="form-control" id="phone" name="phone">
+                            <label for="birth_place" class="form-label">Tempat Lahir <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="birth_place" name="birth_place" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="birth_date" class="form-label">Tanggal Lahir <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="birth_date" name="birth_date" required>
+                            <div class="invalid-feedback"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">No Handphone <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="phone" name="phone" required>
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-md-6">
@@ -270,8 +284,8 @@
                             <div class="invalid-feedback"></div>
                         </div>
                         <div class="col-12">
-                            <label for="address" class="form-label">Alamat</label>
-                            <textarea class="form-control" id="address" name="address" rows="3"></textarea>
+                            <label for="address" class="form-label">Alamat <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="address" name="address" rows="3" required></textarea>
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
@@ -390,9 +404,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (data.success) {
                     // Populate form fields
                     document.getElementById('edit_name').value = data.data.name || '';
-                    document.getElementById('edit_email').value = data.data.email || '';
-                    document.getElementById('edit_student_code').value = data.data.student_code || '';
+                    document.getElementById('edit_nisn').value = data.data.nisn || '';
                     document.getElementById('edit_class_id').value = data.data.class_id || '';
+                    document.getElementById('edit_birth_place').value = data.data.birth_place || '';
+                    document.getElementById('edit_birth_date').value = data.data.birth_date || '';
                     document.getElementById('edit_phone').value = data.data.phone || '';
                     document.getElementById('edit_address').value = data.data.address || '';
                     document.getElementById('edit_status').value = data.data.status || '';
@@ -419,19 +434,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Auto-generate student code based on name (optional)
+    // Auto-generate NISN based on name (optional)
     const nameInput = document.getElementById('name');
-    const codeInput = document.getElementById('student_code');
+    const nisnInput = document.getElementById('nisn');
     
     nameInput.addEventListener('input', function() {
-        if (!codeInput.value) {
-            // Generate simple code from name (you can customize this logic)
+        if (!nisnInput.value) {
+            // Generate simple NISN from name (you can customize this logic)
             const name = this.value.trim();
             if (name) {
-                const code = name.toLowerCase()
+                const nisn = name.toLowerCase()
                     .replace(/[^a-z0-9]/g, '')
-                    .substring(0, 8) + Math.floor(Math.random() * 100);
-                codeInput.value = code.toUpperCase();
+                    .substring(0, 8) + Math.floor(Math.random() * 1000);
+                nisnInput.value = nisn.toUpperCase();
             }
         }
     });

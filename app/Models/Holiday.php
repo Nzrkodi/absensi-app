@@ -24,9 +24,19 @@ class Holiday extends Model
     ];
 
     /**
-     * Check if a given date is a holiday
+     * Check if a given date is a holiday (including auto-detection)
      */
     public static function isHoliday($date)
+    {
+        // Use the new HolidayDetectionService for comprehensive checking
+        $service = app(\App\Services\HolidayDetectionService::class);
+        return $service->isHoliday($date);
+    }
+    
+    /**
+     * Check if a given date is a manual holiday (database only)
+     */
+    public static function isManualHoliday($date)
     {
         $date = Carbon::parse($date)->format('Y-m-d');
         

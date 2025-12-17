@@ -21,7 +21,15 @@
 
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 py-3">
-        <h5 class="card-title mb-0">Absensi Siswa - {{ \Carbon\Carbon::parse($date)->format('d F Y') }}</h5>
+        <div>
+            <h5 class="card-title mb-0">Absensi Siswa - {{ \Carbon\Carbon::parse($date)->format('d F Y') }}</h5>
+            @if($isHoliday)
+                <div class="d-flex align-items-center text-danger mt-1">
+                    <i class="fas fa-calendar-times me-2"></i>
+                    <small><strong>Hari Libur:</strong> {{ $holiday->name ?? 'Libur' }}</small>
+                </div>
+            @endif
+        </div>
         <div class="d-flex gap-2">
             <input type="date" id="dateFilter" value="{{ $date }}" class="form-control form-control-sm" style="width: auto;">
         </div>
@@ -33,7 +41,7 @@
             <input type="hidden" name="date" value="{{ $date }}">
             <div class="row g-2">
                 <div class="col-12 col-md-5">
-                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau NIS..." class="form-control">
+                    <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau NISN..." class="form-control">
                 </div>
                 <div class="col-12 col-md-4">
                     <select name="class_id" class="form-select">
@@ -55,6 +63,18 @@
         </form>
     </div>
 
+    @if($isHoliday)
+    <div class="card-body bg-warning bg-opacity-10 border-bottom">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-calendar-times text-warning me-3 fs-4"></i>
+            <div>
+                <h6 class="mb-1 text-warning">Hari Libur: {{ $holiday->name ?? 'Libur' }}</h6>
+                <small class="text-muted">Tombol absensi dinonaktifkan pada hari libur. Siswa tidak perlu melakukan absensi.</small>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <div class="card-body p-0 p-md-3">
         <!-- Desktop Table -->
         <div class="table-responsive d-none d-md-block">
@@ -62,7 +82,7 @@
                 <thead class="table-light">
                     <tr>
                         <th>No</th>
-                        <th>NIS</th>
+                        <th>NISN</th>
                         <th>Nama</th>
                         <th>Kelas</th>
                         <th>Clock In</th>
@@ -78,7 +98,7 @@
                     @endphp
                     <tr data-student-id="{{ $student->id }}">
                         <td>{{ $students->firstItem() + $index }}</td>
-                        <td>{{ $student->student_code }}</td>
+                        <td>{{ $student->nisn ?? '-' }}</td>
                         <td>{{ $student->user->name ?? '-' }}</td>
                         <td>{{ $student->class->name ?? '-' }}</td>
                         <td class="clock-in-time">
@@ -96,24 +116,30 @@
                         </td>
                         <td>
                             <div class="d-flex gap-1 flex-wrap">
-                                @if(!$attendance || (!$attendance->clock_in && !in_array($attendance->status ?? '', ['sick', 'permission'])))
-                                    <button type="button" class="btn btn-success btn-sm btn-clock-in" data-student-id="{{ $student->id }}">
-                                        <i class="fas fa-sign-in-alt"></i> Clock In
-                                    </button>
-                                @elseif($attendance && $attendance->clock_in && !$attendance->clock_out)
-                                    <button type="button" class="btn btn-warning btn-sm btn-clock-out" data-student-id="{{ $student->id }}">
-                                        <i class="fas fa-sign-out-alt"></i> Clock Out
-                                    </button>
-                                @endif
-                                
-                                @if(!$attendance || !$attendance->clock_out)
-                                    <button type="button" class="btn btn-info btn-sm btn-note" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#noteModal">
-                                        <i class="fas fa-sticky-note"></i> Note
-                                    </button>
+                                @if($isHoliday)
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-calendar-times me-1"></i> Hari Libur
+                                    </span>
                                 @else
-                                    <button type="button" class="btn btn-secondary btn-sm" disabled title="Absensi sudah lengkap">
-                                        <i class="fas fa-sticky-note"></i> Note
-                                    </button>
+                                    @if(!$attendance || (!$attendance->clock_in && !in_array($attendance->status ?? '', ['sick', 'permission'])))
+                                        <button type="button" class="btn btn-success btn-sm btn-clock-in" data-student-id="{{ $student->id }}">
+                                            <i class="fas fa-sign-in-alt"></i> Clock In
+                                        </button>
+                                    @elseif($attendance && $attendance->clock_in && !$attendance->clock_out)
+                                        <button type="button" class="btn btn-warning btn-sm btn-clock-out" data-student-id="{{ $student->id }}">
+                                            <i class="fas fa-sign-out-alt"></i> Clock Out
+                                        </button>
+                                    @endif
+                                    
+                                    @if(!$attendance || (!$attendance->clock_out && !in_array($attendance->status ?? '', ['sick', 'permission'])))
+                                        <button type="button" class="btn btn-info btn-sm btn-note" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#noteModal">
+                                            <i class="fas fa-sticky-note"></i> Note
+                                        </button>
+                                    @else
+                                        <button type="button" class="btn btn-secondary btn-sm" disabled title="{{ $attendance && in_array($attendance->status ?? '', ['sick', 'permission']) ? 'Note sudah diisi' : 'Absensi sudah lengkap' }}">
+                                            <i class="fas fa-sticky-note"></i> Note
+                                        </button>
+                                    @endif
                                 @endif
                             </div>
                         </td>
@@ -137,7 +163,7 @@
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
                         <h6 class="mb-1">{{ $student->user->name ?? '-' }}</h6>
-                        <small class="text-muted">{{ $student->student_code }} - {{ $student->class->name ?? '-' }}</small>
+                        <small class="text-muted">{{ $student->nisn ?? '-' }} - {{ $student->class->name ?? '-' }}</small>
                     </div>
                     <div class="status-badge">
                         @if($attendance)
@@ -164,24 +190,30 @@
                 </div>
                 
                 <div class="d-flex gap-2 flex-wrap">
-                    @if(!$attendance || (!$attendance->clock_in && !in_array($attendance->status ?? '', ['sick', 'permission'])))
-                        <button type="button" class="btn btn-success btn-sm btn-clock-in" data-student-id="{{ $student->id }}">
-                            <i class="fas fa-sign-in-alt"></i> Clock In
-                        </button>
-                    @elseif($attendance && $attendance->clock_in && !$attendance->clock_out)
-                        <button type="button" class="btn btn-warning btn-sm btn-clock-out" data-student-id="{{ $student->id }}">
-                            <i class="fas fa-sign-out-alt"></i> Clock Out
-                        </button>
-                    @endif
-                    
-                    @if(!$attendance || !$attendance->clock_out)
-                        <button type="button" class="btn btn-info btn-sm btn-note" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#noteModal">
-                            <i class="fas fa-sticky-note"></i> Note
-                        </button>
+                    @if($isHoliday)
+                        <span class="badge bg-warning text-dark">
+                            <i class="fas fa-calendar-times me-1"></i> Hari Libur
+                        </span>
                     @else
-                        <button type="button" class="btn btn-secondary btn-sm" disabled title="Absensi sudah lengkap">
-                            <i class="fas fa-sticky-note"></i> Note
-                        </button>
+                        @if(!$attendance || (!$attendance->clock_in && !in_array($attendance->status ?? '', ['sick', 'permission'])))
+                            <button type="button" class="btn btn-success btn-sm btn-clock-in" data-student-id="{{ $student->id }}">
+                                <i class="fas fa-sign-in-alt"></i> Clock In
+                            </button>
+                        @elseif($attendance && $attendance->clock_in && !$attendance->clock_out)
+                            <button type="button" class="btn btn-warning btn-sm btn-clock-out" data-student-id="{{ $student->id }}">
+                                <i class="fas fa-sign-out-alt"></i> Clock Out
+                            </button>
+                        @endif
+                        
+                        @if(!$attendance || (!$attendance->clock_out && !in_array($attendance->status ?? '', ['sick', 'permission'])))
+                            <button type="button" class="btn btn-info btn-sm btn-note" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#noteModal">
+                                <i class="fas fa-sticky-note"></i> Note
+                            </button>
+                        @else
+                            <button type="button" class="btn btn-secondary btn-sm" disabled title="{{ $attendance && in_array($attendance->status ?? '', ['sick', 'permission']) ? 'Note sudah diisi' : 'Absensi sudah lengkap' }}">
+                                <i class="fas fa-sticky-note"></i> Note
+                            </button>
+                        @endif
                     @endif
                 </div>
             </div>
@@ -400,6 +432,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (clockOutBtn) {
                         clockOutBtn.remove();
                     }
+                }
+                
+                // Hide note button after successful note input
+                const noteButton = row.querySelector('.btn-note');
+                if (noteButton) {
+                    noteButton.className = 'btn btn-secondary btn-sm';
+                    noteButton.disabled = true;
+                    noteButton.title = 'Note sudah diisi';
+                    noteButton.removeAttribute('data-bs-toggle');
+                    noteButton.removeAttribute('data-bs-target');
+                    noteButton.innerHTML = '<i class="fas fa-sticky-note"></i> Note';
                 }
                 
                 // Hide modal

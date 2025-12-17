@@ -4,6 +4,21 @@
 @section('header', 'Data User')
 
 @section('content')
+<!-- Alert Messages -->
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
         <h5 class="card-title mb-0">Daftar User</h5>
@@ -20,8 +35,10 @@
                         <th>No</th>
                         <th>Nama</th>
                         <th>Email</th>
+                        <th>Password</th>
                         <th>Role</th>
-                        <th>Dibuat</th>
+                        <th>Jabatan</th>
+                        <th>Mata Pelajaran</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -39,13 +56,18 @@
                         </td>
                         <td>{{ $user->email }}</td>
                         <td>
+                            <span class="text-muted">••••••••</span>
+                            <small class="text-muted d-block">Hidden</small>
+                        </td>
+                        <td>
                             @if($user->role === 'admin')
-                                <span class="badge bg-purple text-white" style="background-color: #6f42c1;">{{ ucfirst($user->role) }}</span>
+                                <span class="badge bg-purple text-white" style="background-color: #6f42c1;">{{ ucfirst($user->role ?? 'User') }}</span>
                             @else
-                                <span class="badge bg-secondary">{{ ucfirst($user->role) }}</span>
+                                <span class="badge bg-secondary">{{ ucfirst($user->role ?? 'User') }}</span>
                             @endif
                         </td>
-                        <td>{{ $user->created_at->format('d M Y') }}</td>
+                        <td>{{ $user->position ?? '-' }}</td>
+                        <td>{{ $user->subject ?? '-' }}</td>
                         <td>
                             <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-primary">Edit</a>
                             @if($user->id !== auth()->id())
@@ -59,7 +81,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center text-muted py-4">Belum ada data user</td>
+                        <td colspan="8" class="text-center text-muted py-4">Belum ada data user</td>
                     </tr>
                     @endforelse
                 </tbody>

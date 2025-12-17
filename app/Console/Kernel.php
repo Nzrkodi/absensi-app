@@ -17,6 +17,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('attendance:update-absent')
                  ->dailyAt($autoAbsentTime)
                  ->timezone('Asia/Makassar');
+        
+        // Auto-sync holidays monthly (first day of each month at 2 AM)
+        $schedule->command('holidays:sync --all')
+                 ->monthlyOn(1, '02:00')
+                 ->timezone('Asia/Makassar');
     }
 
     /**

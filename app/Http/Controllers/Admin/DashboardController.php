@@ -43,10 +43,11 @@ class DashboardController extends Controller
         $permissionToday = $attendanceStats->get('permission')->count ?? 0;
         $notRecordedToday = $totalStudents - $attendanceStats->sum('count');
         
-        // Get recent attendances for selected date
+        // Get recent attendances for selected date (ordered by clock_in time - earliest first)
         $recentAttendances = Attendance::where('date', $selectedDate)
             ->with(['student.user', 'student.class'])
-            ->orderBy('updated_at', 'desc')
+            ->whereNotNull('clock_in')
+            ->orderBy('clock_in', 'asc')
             ->limit(10)
             ->get();
         

@@ -154,6 +154,7 @@
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom">
                 <h6 class="card-title mb-0">Aktivitas Absensi Hari Ini</h6>
+                <small class="text-muted">Diurutkan dari yang paling awal absen</small>
             </div>
             <div class="card-body">
                 <div class="table-responsive">

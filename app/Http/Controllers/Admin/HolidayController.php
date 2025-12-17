@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Holiday;
+use App\Services\HolidayDetectionService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -163,5 +164,72 @@ class HolidayController extends Controller
             ] : null,
             'date' => Carbon::today('Asia/Makassar')->format('Y-m-d')
         ]);
+    }
+
+    public function autoSync(Request $request)
+    {
+        $request->validate([
+            'year' => 'required|integer|min:2020|max:2030',
+            'types' => 'required|array',
+            'types.*' => 'in:weekend,national'
+        ]);
+
+        try {
+            $service = app(HolidayDetectionService::class);
+            $year = $request->year;
+            $types = $request->types;
+            $totalCreated = 0;
+            $results = [];
+
+            // Clear cache first
+            $service->clearCache($year);
+
+            // Sync weekends
+            if (in_array('weekend', $types)) {
+                $weekendCount = $service->createWeekendHolidays($year);
+                $totalCreated += $weekendCount;
+                $results[] = "Weekend: {$weekendCount} hari";
+            }
+
+            // Sync national holidays
+            if (in_array('national', $types)) {
+                $nationalCount = $service->createNationalHolidays($year);
+                $totalCreated += $nationalCount;
+                $results[] = "Nasional: {$nationalCount} hari";
+            }
+
+            $message = "Berhasil auto-sync {$totalCreated} hari libur untuk tahun {$year}";
+            if (!empty($results)) {
+                $message .= " (" . implode(', ', $results) . ")";
+            }
+
+            return redirect()->route('admin.holidays.index', ['year' => $year])
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            return redirect()->route('admin.holidays.index')
+                ->with('error', 'Gagal auto-sync hari libur: ' . $e->getMessage());
+        }
+    }
+
+    public function clearCache(Request $request)
+    {
+        try {
+            $service = app(HolidayDetectionService::class);
+            $year = $request->get('year');
+            
+            $service->clearCache($year);
+            
+            $message = $year 
+                ? "Cache hari libur untuk tahun {$year} berhasil dibersihkan"
+                : "Semua cache hari libur berhasil dibersihkan";
+
+            return redirect()->route('admin.holidays.index')
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+            return redirect()->route('admin.holidays.index')
+                ->with('error', 'Gagal membersihkan cache: ' . $e->getMessage());
+        }
     }
 }

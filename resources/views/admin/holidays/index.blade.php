@@ -51,6 +51,12 @@
             <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#weekendModal">
                 <i class="fas fa-calendar-week"></i> Buat Weekend
             </button>
+            <button type="button" class="btn btn-warning btn-sm" data-bs-toggle="modal" data-bs-target="#autoSyncModal">
+                <i class="fas fa-sync-alt"></i> Auto-Sync
+            </button>
+            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#clearCacheModal">
+                <i class="fas fa-trash"></i> Clear Cache
+            </button>
         </div>
     </div>
     
@@ -333,6 +339,113 @@
     </div>
 </div>
 
+<!-- Auto-Sync Modal -->
+<div class="modal fade" id="autoSyncModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-sync-alt me-2"></i>Auto-Sync Hari Libur
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ route('admin.holidays.auto-sync') }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="sync_year" class="form-label">Tahun <span class="text-danger">*</span></label>
+                        <select class="form-select" id="sync_year" name="year" required>
+                            @for($y = 2024; $y <= 2030; $y++)
+                                <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Jenis Hari Libur <span class="text-danger">*</span></label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="weekend" id="sync_weekend" name="types[]" checked>
+                            <label class="form-check-label" for="sync_weekend">
+                                <i class="fas fa-calendar-week me-1"></i>Weekend (Sabtu & Minggu)
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="national" id="sync_national" name="types[]" checked>
+                            <label class="form-check-label" for="sync_national">
+                                <i class="fas fa-flag me-1"></i>Hari Libur Nasional (dari API)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Perhatian:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>Fitur ini akan mengambil data hari libur nasional dari internet</li>
+                            <li>Data yang sudah ada tidak akan digandakan</li>
+                            <li>Cache akan dibersihkan untuk memastikan data terbaru</li>
+                            <li>Proses mungkin membutuhkan waktu beberapa detik</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Sumber Data:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li><strong>Weekend:</strong> Otomatis dibuat untuk Sabtu & Minggu</li>
+                            <li><strong>Nasional:</strong> API harilibur.id (hari libur resmi Indonesia)</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-warning" id="syncButton">
+                        <i class="fas fa-sync-alt me-1"></i>Mulai Auto-Sync
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Clear Cache Modal -->
+<div class="modal fade" id="clearCacheModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-trash me-2"></i>Bersihkan Cache
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form action="{{ route('admin.holidays.clear-cache') }}" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="cache_year" class="form-label">Tahun (kosongkan untuk semua)</label>
+                        <select class="form-select" id="cache_year" name="year">
+                            <option value="">Semua Tahun</option>
+                            @for($y = 2024; $y <= 2030; $y++)
+                                <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}</option>
+                            @endfor
+                        </select>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Cache akan dibersihkan untuk memaksa sistem mengambil data terbaru dari API.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>Bersihkan Cache
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -359,6 +472,25 @@ document.addEventListener('DOMContentLoaded', function() {
             modal.show();
         });
     });
+    
+    // Handle auto-sync form submission
+    const autoSyncForm = document.querySelector('#autoSyncModal form');
+    if (autoSyncForm) {
+        autoSyncForm.addEventListener('submit', function(e) {
+            const syncButton = document.getElementById('syncButton');
+            const checkboxes = document.querySelectorAll('input[name="types[]"]:checked');
+            
+            if (checkboxes.length === 0) {
+                e.preventDefault();
+                alert('Pilih minimal satu jenis hari libur untuk di-sync!');
+                return;
+            }
+            
+            // Show loading state
+            syncButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Sedang Sync...';
+            syncButton.disabled = true;
+        });
+    }
 });
 
 function checkTodayStatus() {

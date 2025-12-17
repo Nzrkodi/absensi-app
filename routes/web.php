@@ -46,9 +46,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::patch('/holidays/{holiday}/toggle', [\App\Http\Controllers\Admin\HolidayController::class, 'toggle'])->name('holidays.toggle');
     Route::post('/holidays/weekends', [\App\Http\Controllers\Admin\HolidayController::class, 'createWeekends'])->name('holidays.weekends');
     Route::get('/holidays/check-today', [\App\Http\Controllers\Admin\HolidayController::class, 'checkToday'])->name('holidays.check-today');
+    Route::post('/holidays/auto-sync', [\App\Http\Controllers\Admin\HolidayController::class, 'autoSync'])->name('holidays.auto-sync');
+    Route::post('/holidays/clear-cache', [\App\Http\Controllers\Admin\HolidayController::class, 'clearCache'])->name('holidays.clear-cache');
     
     // Report routes
     Route::get('/reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/preview', [\App\Http\Controllers\Admin\ReportController::class, 'preview'])->name('reports.preview');
     Route::get('/reports/student/{student}', [\App\Http\Controllers\Admin\ReportController::class, 'student'])->name('reports.student');
     Route::get('/reports/export', [\App\Http\Controllers\Admin\ReportController::class, 'export'])->name('reports.export');
     

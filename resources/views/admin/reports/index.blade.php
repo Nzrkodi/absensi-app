@@ -50,8 +50,8 @@
                         <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary">
                             <i class="fas fa-refresh me-1"></i> Reset
                         </a>
-                        <a href="{{ route('admin.reports.export', request()->query()) }}" class="btn btn-success">
-                            <i class="fas fa-download me-1"></i> Export CSV
+                        <a href="{{ route('admin.reports.preview', request()->query()) }}" class="btn btn-primary">
+                            <i class="fas fa-eye me-1"></i> Preview & Export
                         </a>
                     </div>
                 </div>
@@ -145,7 +145,7 @@
                     @forelse($attendances as $attendance)
                     <tr>
                         <td>{{ $attendance->date->format('d M Y') }}</td>
-                        <td>{{ $attendance->student->student_code }}</td>
+                        <td>{{ $attendance->student->nisn ?? '-' }}</td>
                         <td>{{ $attendance->student->user->name }}</td>
                         <td>{{ $attendance->student->class->name ?? '-' }}</td>
                         <td>

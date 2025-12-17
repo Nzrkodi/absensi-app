@@ -14,6 +14,10 @@ class AttendanceController extends Controller
     {
         $date = $request->get('date', Carbon::today('Asia/Makassar')->format('Y-m-d'));
         
+        // Check if selected date is holiday
+        $isHoliday = \App\Models\Holiday::isHoliday($date);
+        $holiday = $isHoliday ? \App\Models\Holiday::getHoliday($date) : null;
+        
         $query = Student::query()
             ->select('students.*')
             ->join('users', 'students.user_id', '=', 'users.id')
@@ -29,7 +33,7 @@ class AttendanceController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('students.student_code', 'like', "%{$search}%")
+                $q->where('students.nisn', 'like', "%{$search}%")
                     ->orWhere('users.name', 'like', "%{$search}%");
             });
         }
@@ -43,7 +47,7 @@ class AttendanceController extends Controller
         // Get classes for filter
         $classes = \App\Models\Classes::select('id', 'name')->get();
 
-        return view('admin.attendance.index', compact('students', 'classes', 'date'));
+        return view('admin.attendance.index', compact('students', 'classes', 'date', 'isHoliday', 'holiday'));
     }
 
     public function clockIn(Request $request, Student $student)

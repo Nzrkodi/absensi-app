@@ -13,7 +13,7 @@
                     <div>
                         <h5 class="mb-1">{{ $student->user->name }}</h5>
                         <div class="text-muted">
-                            <span class="me-3"><i class="fas fa-id-card me-1"></i> NIS: {{ $student->student_code }}</span>
+                            <span class="me-3"><i class="fas fa-id-card me-1"></i> NISN: {{ $student->nisn ?? '-' }}</span>
                             <span class="me-3"><i class="fas fa-school me-1"></i> Kelas: {{ $student->class->name ?? '-' }}</span>
                             <span><i class="fas fa-calendar me-1"></i> Periode: {{ \Carbon\Carbon::parse($startDate)->format('d M Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d M Y') }}</span>
                         </div>

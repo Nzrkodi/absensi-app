@@ -20,7 +20,7 @@ class StudentController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('students.student_code', 'like', "%{$search}%")
+                $q->where('students.nisn', 'like', "%{$search}%")
                     ->orWhere('users.name', 'like', "%{$search}%");
             });
         }
@@ -29,13 +29,13 @@ class StudentController extends Controller
             $query->where('students.class_id', $request->class_id);
         }
 
-        $students = $query->orderBy('users.name', 'asc')->with(['user', 'class'])->paginate(10);
+        $students = $query->orderBy('users.name', 'asc')->with(['user', 'class'])->get();
         $classes = Classes::select('id', 'name')->get();
 
         // Handle AJAX request for reports filter
         if ($request->ajax || $request->get('ajax')) {
             return response()->json([
-                'students' => $students->items()
+                'students' => $students
             ]);
         }
 
@@ -51,27 +51,33 @@ class StudentController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email',
-            'student_code' => 'required|string|unique:students,student_code',
+            'nisn' => 'required|string|unique:students,nisn',
             'class_id' => 'required|exists:classes,id',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
+            'birth_place' => 'required|string|max:255',
+            'birth_date' => 'required|date',
+            'phone' => 'required|string|max:20',
+            'address' => 'required|string',
             'status' => 'required|in:active,inactive',
         ]);
 
         try {
+            // Generate email from NISN
+            $email = strtolower($request->nisn) . '@student.school.id';
+            
             // Create user first
             $user = User::create([
                 'name' => $request->name,
-                'email' => $request->email,
+                'email' => $email,
                 'password' => bcrypt('password123'), // Default password
             ]);
 
             // Create student
             Student::create([
                 'user_id' => $user->id,
-                'student_code' => $request->student_code,
+                'nisn' => $request->nisn,
                 'class_id' => $request->class_id,
+                'birth_place' => $request->birth_place,
+                'birth_date' => $request->birth_date,
                 'phone' => $request->phone,
                 'address' => $request->address,
                 'status' => $request->status,
@@ -96,9 +102,10 @@ class StudentController extends Controller
                 'data' => [
                     'id' => $student->id,
                     'name' => $student->user->name,
-                    'email' => $student->user->email,
-                    'student_code' => $student->student_code,
+                    'nisn' => $student->nisn,
                     'class_id' => $student->class_id,
+                    'birth_place' => $student->birth_place,
+                    'birth_date' => $student->birth_date ? $student->birth_date->format('Y-m-d') : '',
                     'phone' => $student->phone,
                     'address' => $student->address,
                     'status' => $student->status,
@@ -116,27 +123,33 @@ class StudentController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . Student::findOrFail($id)->user_id,
-            'student_code' => 'required|string|unique:students,student_code,' . $id,
+            'nisn' => 'required|string|unique:students,nisn,' . $id,
             'class_id' => 'required|exists:classes,id',
-            'phone' => 'nullable|string|max:20',
-            'address' => 'nullable|string',
+            'birth_place' => 'required|string|max:255',
+            'birth_date' => 'required|date',
+            'phone' => 'required|string|max:20',
+            'address' => 'required|string',
             'status' => 'required|in:active,inactive',
         ]);
 
         try {
             $student = Student::findOrFail($id);
             
+            // Generate new email from NISN if NISN changed
+            $email = strtolower($request->nisn) . '@student.school.id';
+            
             // Update user data
             $student->user->update([
                 'name' => $request->name,
-                'email' => $request->email,
+                'email' => $email,
             ]);
 
             // Update student data
             $student->update([
-                'student_code' => $request->student_code,
+                'nisn' => $request->nisn,
                 'class_id' => $request->class_id,
+                'birth_place' => $request->birth_place,
+                'birth_date' => $request->birth_date,
                 'phone' => $request->phone,
                 'address' => $request->address,
                 'status' => $request->status,

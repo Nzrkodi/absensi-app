@@ -13,11 +13,17 @@ class Student extends Model
 
     protected $fillable = [
         'user_id',
-        'student_code',
+        'nisn',
         'class_id',
+        'birth_place',
+        'birth_date',
         'phone',
         'address',
         'status',
+    ];
+
+    protected $casts = [
+        'birth_date' => 'date',
     ];
 
     public function user(): BelongsTo

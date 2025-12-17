@@ -120,7 +120,7 @@ class ReportController extends Controller
         ));
     }
     
-    public function export(Request $request)
+    public function preview(Request $request)
     {
         $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->get('end_date', Carbon::now()->format('Y-m-d'));
@@ -143,7 +143,83 @@ class ReportController extends Controller
         
         $attendances = $query->orderBy('date', 'desc')->get();
         
-        // Generate CSV
+        // Get summary statistics
+        $summaryQuery = Attendance::whereBetween('date', [$startDate, $endDate]);
+        
+        if ($classId) {
+            $summaryQuery->whereHas('student', function($q) use ($classId) {
+                $q->where('class_id', $classId);
+            });
+        }
+        
+        if ($studentId) {
+            $summaryQuery->where('student_id', $studentId);
+        }
+        
+        $summary = $summaryQuery->selectRaw('
+            COUNT(*) as total,
+            COUNT(CASE WHEN status = "present" THEN 1 END) as present,
+            COUNT(CASE WHEN status = "late" THEN 1 END) as late,
+            COUNT(CASE WHEN status = "absent" THEN 1 END) as absent,
+            COUNT(CASE WHEN status = "sick" THEN 1 END) as sick,
+            COUNT(CASE WHEN status = "permission" THEN 1 END) as permission
+        ')->first();
+        
+        // Get filter info
+        $filterInfo = [
+            'class_name' => $classId ? Classes::find($classId)->name : 'Semua Kelas',
+            'student_name' => $studentId ? Student::find($studentId)->user->name : 'Semua Siswa',
+        ];
+        
+        return view('admin.reports.preview', compact(
+            'attendances',
+            'summary',
+            'startDate',
+            'endDate',
+            'classId',
+            'studentId',
+            'filterInfo'
+        ));
+    }
+
+    public function export(Request $request)
+    {
+        $format = $request->get('format', 'csv'); // csv, pdf, excel, word
+        $startDate = $request->get('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->get('end_date', Carbon::now()->format('Y-m-d'));
+        $classId = $request->get('class_id');
+        $studentId = $request->get('student_id');
+        
+        // Build query
+        $query = Attendance::with(['student.user', 'student.class'])
+            ->whereBetween('date', [$startDate, $endDate]);
+        
+        if ($classId) {
+            $query->whereHas('student', function($q) use ($classId) {
+                $q->where('class_id', $classId);
+            });
+        }
+        
+        if ($studentId) {
+            $query->where('student_id', $studentId);
+        }
+        
+        $attendances = $query->orderBy('date', 'desc')->get();
+        
+        switch ($format) {
+            case 'pdf':
+                return $this->exportPdf($attendances, $startDate, $endDate, $classId, $studentId);
+            case 'excel':
+                return $this->exportExcel($attendances, $startDate, $endDate, $classId, $studentId);
+            case 'word':
+                return $this->exportWord($attendances, $startDate, $endDate, $classId, $studentId);
+            default:
+                return $this->exportCsv($attendances, $startDate, $endDate, $classId, $studentId);
+        }
+    }
+    
+    private function exportCsv($attendances, $startDate, $endDate, $classId, $studentId)
+    {
         $filename = 'laporan_absensi_' . $startDate . '_to_' . $endDate . '.csv';
         
         $headers = [
@@ -160,7 +236,7 @@ class ReportController extends Controller
             // CSV headers
             fputcsv($file, [
                 'Tanggal',
-                'NIS',
+                'NISN',
                 'Nama Siswa',
                 'Kelas',
                 'Clock In',
@@ -173,7 +249,7 @@ class ReportController extends Controller
             foreach ($attendances as $attendance) {
                 fputcsv($file, [
                     $attendance->date->format('d/m/Y'),
-                    $attendance->student->student_code,
+                    $attendance->student->nisn ?? '-',
                     $attendance->student->user->name,
                     $attendance->student->class->name ?? '-',
                     $attendance->clock_in ? Carbon::parse($attendance->clock_in)->format('H:i') : '-',
@@ -187,5 +263,73 @@ class ReportController extends Controller
         };
         
         return response()->stream($callback, 200, $headers);
+    }
+    
+    private function exportPdf($attendances, $startDate, $endDate, $classId, $studentId)
+    {
+        // For now, return a simple HTML response that can be printed as PDF
+        // You can integrate with libraries like DomPDF or wkhtmltopdf later
+        
+        $filterInfo = [
+            'class_name' => $classId ? Classes::find($classId)->name : 'Semua Kelas',
+            'student_name' => $studentId ? Student::find($studentId)->user->name : 'Semua Siswa',
+        ];
+        
+        return view('admin.reports.pdf', compact(
+            'attendances',
+            'startDate',
+            'endDate',
+            'filterInfo'
+        ));
+    }
+    
+    private function exportExcel($attendances, $startDate, $endDate, $classId, $studentId)
+    {
+        // Simple Excel export using HTML table with Excel MIME type
+        $filename = 'laporan_absensi_' . $startDate . '_to_' . $endDate . '.xls';
+        
+        $filterInfo = [
+            'class_name' => $classId ? Classes::find($classId)->name : 'Semua Kelas',
+            'student_name' => $studentId ? Student::find($studentId)->user->name : 'Semua Siswa',
+        ];
+        
+        $headers = [
+            'Content-Type' => 'application/vnd.ms-excel',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+        
+        $content = view('admin.reports.excel', compact(
+            'attendances',
+            'startDate',
+            'endDate',
+            'filterInfo'
+        ))->render();
+        
+        return response($content, 200, $headers);
+    }
+    
+    private function exportWord($attendances, $startDate, $endDate, $classId, $studentId)
+    {
+        // Simple Word export using HTML with Word MIME type
+        $filename = 'laporan_absensi_' . $startDate . '_to_' . $endDate . '.doc';
+        
+        $filterInfo = [
+            'class_name' => $classId ? Classes::find($classId)->name : 'Semua Kelas',
+            'student_name' => $studentId ? Student::find($studentId)->user->name : 'Semua Siswa',
+        ];
+        
+        $headers = [
+            'Content-Type' => 'application/msword',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ];
+        
+        $content = view('admin.reports.word', compact(
+            'attendances',
+            'startDate',
+            'endDate',
+            'filterInfo'
+        ))->render();
+        
+        return response($content, 200, $headers);
     }
 }
