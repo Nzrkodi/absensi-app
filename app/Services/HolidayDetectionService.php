@@ -27,8 +27,8 @@ class HolidayDetectionService
             return true;
         }
         
-        // Check manual holidays in database
-        return Holiday::isHoliday($date);
+        // Check manual holidays in database (use isManualHoliday to avoid circular dependency)
+        return Holiday::isManualHoliday($date);
     }
     
     /**
@@ -149,31 +149,56 @@ class HolidayDetectionService
      */
     public function createWeekendHolidays(int $year): int
     {
-        $created = 0;
+        $weekends = [];
         $startDate = Carbon::create($year, 1, 1);
         $endDate = Carbon::create($year, 12, 31);
         
         $current = $startDate->copy();
         
+        // Collect all weekend dates first
         while ($current->lte($endDate)) {
             if ($this->isWeekend($current)) {
-                $holidayName = $current->dayOfWeek === 0 ? 'Minggu' : 'Sabtu';
-                
-                // Check if holiday already exists
-                $exists = Holiday::where('date', $current->format('Y-m-d'))->exists();
-                
-                if (!$exists) {
-                    Holiday::create([
-                        'name' => $holidayName,
-                        'date' => $current->format('Y-m-d'),
-                        'type' => 'weekend',
-                        'is_active' => true
-                    ]);
-                    $created++;
-                }
+                $weekends[] = [
+                    'name' => $current->dayOfWeek === 0 ? 'Minggu' : 'Sabtu',
+                    'date' => $current->format('Y-m-d'),
+                    'type' => 'weekend',
+                    'is_active' => true,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ];
             }
-            
             $current->addDay();
+        }
+        
+        if (empty($weekends)) {
+            return 0;
+        }
+        
+        // Get existing weekend holidays for this year to avoid duplicates
+        $existingDates = Holiday::whereYear('date', $year)
+            ->where('type', 'weekend')
+            ->pluck('date')
+            ->map(function($date) {
+                return Carbon::parse($date)->format('Y-m-d');
+            })
+            ->toArray();
+        
+        // Filter out existing dates
+        $newWeekends = array_filter($weekends, function($weekend) use ($existingDates) {
+            return !in_array($weekend['date'], $existingDates);
+        });
+        
+        if (empty($newWeekends)) {
+            return 0;
+        }
+        
+        // Insert in chunks to avoid memory issues
+        $chunks = array_chunk($newWeekends, 50);
+        $created = 0;
+        
+        foreach ($chunks as $chunk) {
+            Holiday::insert($chunk);
+            $created += count($chunk);
         }
         
         return $created;

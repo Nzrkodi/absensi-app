@@ -135,7 +135,8 @@ class HolidayController extends Controller
         ]);
 
         try {
-            $count = Holiday::createWeekendHolidays($request->year);
+            $service = app(HolidayDetectionService::class);
+            $count = $service->createWeekendHolidays($request->year);
 
             return redirect()->route('admin.holidays.index', ['year' => $request->year])
                 ->with('success', "Berhasil menambahkan {$count} hari libur weekend untuk tahun {$request->year}");
