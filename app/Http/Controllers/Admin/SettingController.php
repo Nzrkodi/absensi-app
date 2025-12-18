@@ -21,7 +21,7 @@ class SettingController extends Controller
             }
         });
 
-        $userRole = auth()->user()->role;
+        $userRole = auth()->check() ? auth()->user()->role : 'guest';
         $isAdmin = $userRole === 'admin';
 
         return view('admin.settings.index', compact('settings', 'allSettings', 'isAdmin'));

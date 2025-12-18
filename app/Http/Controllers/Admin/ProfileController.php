@@ -16,6 +16,11 @@ class ProfileController extends Controller
     public function show()
     {
         $user = Auth::user();
+        
+        if (!$user) {
+            return redirect()->route('login')->with('error', 'Silakan login terlebih dahulu');
+        }
+        
         return view('admin.profile.show', compact('user'));
     }
 

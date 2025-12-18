@@ -39,8 +39,11 @@ class LoginController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
             
+            $user = Auth::user();
+            $welcomeMessage = $user ? 'Selamat datang, ' . $user->name . '!' : 'Selamat datang!';
+            
             return redirect()->intended(route('admin.dashboard'))
-                ->with('success', 'Selamat datang, ' . Auth::user()->name . '!');
+                ->with('success', $welcomeMessage);
         }
 
         return back()->withErrors([

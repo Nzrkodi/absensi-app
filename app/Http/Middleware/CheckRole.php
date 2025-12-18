@@ -19,7 +19,7 @@ class CheckRole
             return redirect()->route('login');
         }
 
-        $userRole = auth()->user()->role;
+        $userRole = auth()->check() ? auth()->user()->role : 'guest';
         
         if (!in_array($userRole, $roles)) {
             abort(403, 'Anda tidak memiliki akses ke halaman ini.');
