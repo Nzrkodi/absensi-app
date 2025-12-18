@@ -19,6 +19,27 @@
     </div>
 @endif
 
+<!-- Early Clock In Warning -->
+@if(!$isHoliday && !$allowEarlyClockIn && $isBeforeSchoolStart)
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+            <div>
+                <h6 class="alert-heading mb-1">Clock In Belum Diizinkan</h6>
+                <p class="mb-0">
+                    Siswa belum bisa melakukan absensi karena pengaturan "Clock In Sebelum Jam Mulai Sekolah" dimatikan. 
+                    Clock in akan tersedia mulai jam <strong>{{ $settings['school_start_time'] }}</strong>.
+                </p>
+                <small class="text-muted">
+                    Waktu sekarang: <span id="currentTime">{{ \Carbon\Carbon::now('Asia/Makassar')->format('H:i:s') }}</span> | 
+                    Sisa waktu: <span id="timeRemaining"></span>
+                </small>
+            </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 py-3">
         <div>
@@ -27,6 +48,11 @@
                 <div class="d-flex align-items-center text-danger mt-1">
                     <i class="fas fa-calendar-times me-2"></i>
                     <small><strong>Hari Libur:</strong> {{ $holiday->name ?? 'Libur' }}</small>
+                </div>
+            @elseif(!$allowEarlyClockIn && $isBeforeSchoolStart)
+                <div class="d-flex align-items-center text-warning mt-1">
+                    <i class="fas fa-clock me-2"></i>
+                    <small><strong>Clock In Belum Diizinkan:</strong> Tunggu hingga jam {{ $settings['school_start_time'] }}</small>
                 </div>
             @endif
         </div>
@@ -270,6 +296,72 @@
 document.addEventListener('DOMContentLoaded', function() {
     let currentStudentId = null;
     
+    // Early clock in settings
+    const allowEarlyClockIn = {{ $allowEarlyClockIn ? 'true' : 'false' }};
+    const schoolStartTime = '{{ $settings["school_start_time"] }}';
+    const isHoliday = {{ $isHoliday ? 'true' : 'false' }};
+    
+    // Update current time and check early clock in status
+    function updateTimeAndStatus() {
+        const now = new Date();
+        const currentTimeStr = now.toLocaleTimeString('id-ID', { 
+            timeZone: 'Asia/Makassar',
+            hour12: false 
+        });
+        
+        // Update current time display
+        const currentTimeElement = document.getElementById('currentTime');
+        if (currentTimeElement) {
+            currentTimeElement.textContent = currentTimeStr;
+        }
+        
+        // Check if we can enable clock in buttons
+        if (!isHoliday && !allowEarlyClockIn) {
+            const [currentHour, currentMinute] = currentTimeStr.split(':').map(Number);
+            const [schoolHour, schoolMinute] = schoolStartTime.split(':').map(Number);
+            
+            const currentMinutes = currentHour * 60 + currentMinute;
+            const schoolMinutes = schoolHour * 60 + schoolMinute;
+            
+            const timeRemainingElement = document.getElementById('timeRemaining');
+            const clockInButtons = document.querySelectorAll('.btn-clock-in');
+            
+            if (currentMinutes < schoolMinutes) {
+                // Still before school start time
+                const remainingMinutes = schoolMinutes - currentMinutes;
+                const remainingHours = Math.floor(remainingMinutes / 60);
+                const remainingMins = remainingMinutes % 60;
+                
+                if (timeRemainingElement) {
+                    timeRemainingElement.textContent = `${remainingHours}j ${remainingMins}m`;
+                }
+                
+                // Disable clock in buttons
+                clockInButtons.forEach(button => {
+                    button.disabled = true;
+                    button.title = `Clock in akan tersedia jam ${schoolStartTime}`;
+                    button.classList.add('opacity-50');
+                });
+            } else {
+                // School time has started, enable buttons
+                if (timeRemainingElement) {
+                    timeRemainingElement.textContent = 'Sudah bisa clock in';
+                    timeRemainingElement.parentElement.parentElement.style.display = 'none';
+                }
+                
+                clockInButtons.forEach(button => {
+                    button.disabled = false;
+                    button.title = '';
+                    button.classList.remove('opacity-50');
+                });
+            }
+        }
+    }
+    
+    // Update time every second
+    updateTimeAndStatus();
+    setInterval(updateTimeAndStatus, 1000);
+    
     // Date filter change
     document.getElementById('dateFilter').addEventListener('change', function() {
         const date = this.value;
@@ -314,7 +406,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     showToast('success', data.message);
                 } else {
-                    showToast('error', data.message);
+                    // Check if it's early clock in warning
+                    if (data.early_clockin_disabled) {
+                        showToast('warning', data.message);
+                    } else {
+                        showToast('error', data.message);
+                    }
                     this.innerHTML = originalText;
                 }
             })

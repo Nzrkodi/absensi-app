@@ -46,8 +46,26 @@ class AttendanceController extends Controller
         
         // Get classes for filter
         $classes = \App\Models\Classes::select('id', 'name')->get();
+        
+        // Get attendance settings for early clock in check
+        $settings = \App\Models\Setting::getAttendanceSettings();
+        $allowEarlyClockIn = \App\Models\Setting::get('allow_early_clockin', true);
+        
+        // Check if current time is before school start time
+        $now = Carbon::now('Asia/Makassar');
+        $schoolStartTime = Carbon::createFromFormat('H:i', $settings['school_start_time'], 'Asia/Makassar');
+        $isBeforeSchoolStart = $now->format('H:i') < $schoolStartTime->format('H:i');
 
-        return view('admin.attendance.index', compact('students', 'classes', 'date', 'isHoliday', 'holiday'));
+        return view('admin.attendance.index', compact(
+            'students', 
+            'classes', 
+            'date', 
+            'isHoliday', 
+            'holiday',
+            'settings',
+            'allowEarlyClockIn',
+            'isBeforeSchoolStart'
+        ));
     }
 
     public function clockIn(Request $request, Student $student)
@@ -69,6 +87,18 @@ class AttendanceController extends Controller
 
         // Get settings for school start time and late tolerance
         $settings = \App\Models\Setting::getAttendanceSettings();
+        $allowEarlyClockIn = \App\Models\Setting::get('allow_early_clockin', true);
+        
+        // Check if early clock in is allowed
+        $schoolStartTime = Carbon::createFromFormat('H:i', $settings['school_start_time'], 'Asia/Makassar')->setDate($date->year, $date->month, $date->day);
+        
+        if (!$allowEarlyClockIn && $now->lt($schoolStartTime)) {
+            return response()->json([
+                'success' => false,
+                'message' => "Clock in belum diizinkan. Silakan tunggu hingga jam {$settings['school_start_time']}",
+                'early_clockin_disabled' => true
+            ]);
+        }
         
         // Debug: Log current settings
         \Log::info('Clock In Settings', [

@@ -87,6 +87,7 @@ class Setting extends Model
             'school_start_time' => self::get('school_start_time', '07:00'),
             'late_tolerance_minutes' => self::get('late_tolerance_minutes', 15),
             'auto_absent_time' => self::get('auto_absent_time', '15:00'),
+            'allow_early_clockin' => self::get('allow_early_clockin', true),
         ];
     }
 }
