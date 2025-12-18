@@ -12,6 +12,7 @@ class StudentController extends Controller
     public function index(Request $request)
     {
         $query = Student::query()
+            ->select('students.*')
             ->leftJoin('classes', 'students.class_id', '=', 'classes.id');
 
         if ($request->filled('search')) {
