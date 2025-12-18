@@ -11,7 +11,7 @@
             <div class="card-body">
                 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
                     <div>
-                        <h5 class="mb-1">{{ $student->user->name }}</h5>
+                        <h5 class="mb-1">{{ $student->name }}</h5>
                         <div class="text-muted">
                             <span class="me-3"><i class="fas fa-id-card me-1"></i> NISN: {{ $student->nisn ?? '-' }}</span>
                             <span class="me-3"><i class="fas fa-school me-1"></i> Kelas: {{ $student->class->name ?? '-' }}</span>

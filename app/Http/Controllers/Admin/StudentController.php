@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Classes;
 use App\Models\Student;
-use App\Models\User;
 use Illuminate\Http\Request;
 
 class StudentController extends Controller
@@ -13,15 +12,13 @@ class StudentController extends Controller
     public function index(Request $request)
     {
         $query = Student::query()
-            ->select('students.*')
-            ->join('users', 'students.user_id', '=', 'users.id')
             ->leftJoin('classes', 'students.class_id', '=', 'classes.id');
 
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('students.nisn', 'like', "%{$search}%")
-                    ->orWhere('users.name', 'like', "%{$search}%");
+                    ->orWhere('students.name', 'like', "%{$search}%");
             });
         }
 
@@ -29,7 +26,7 @@ class StudentController extends Controller
             $query->where('students.class_id', $request->class_id);
         }
 
-        $students = $query->orderBy('users.name', 'asc')->with(['user', 'class'])->get();
+        $students = $query->orderBy('students.name', 'asc')->with(['class'])->get();
         $classes = Classes::select('id', 'name')->get();
 
         // Handle AJAX request for reports filter
@@ -61,19 +58,9 @@ class StudentController extends Controller
         ]);
 
         try {
-            // Generate email from NISN
-            $email = strtolower($request->nisn) . '@student.school.id';
-            
-            // Create user first
-            $user = User::create([
-                'name' => $request->name,
-                'email' => $email,
-                'password' => bcrypt('password123'), // Default password
-            ]);
-
-            // Create student
+            // Create student directly without user account
             Student::create([
-                'user_id' => $user->id,
+                'name' => $request->name,
                 'nisn' => $request->nisn,
                 'class_id' => $request->class_id,
                 'birth_place' => $request->birth_place,
@@ -95,13 +82,13 @@ class StudentController extends Controller
     public function edit($id)
     {
         try {
-            $student = Student::with(['user', 'class'])->findOrFail($id);
+            $student = Student::with(['class'])->findOrFail($id);
             
             return response()->json([
                 'success' => true,
                 'data' => [
                     'id' => $student->id,
-                    'name' => $student->user->name,
+                    'name' => $student->name,
                     'nisn' => $student->nisn,
                     'class_id' => $student->class_id,
                     'birth_place' => $student->birth_place,
@@ -135,17 +122,9 @@ class StudentController extends Controller
         try {
             $student = Student::findOrFail($id);
             
-            // Generate new email from NISN if NISN changed
-            $email = strtolower($request->nisn) . '@student.school.id';
-            
-            // Update user data
-            $student->user->update([
-                'name' => $request->name,
-                'email' => $email,
-            ]);
-
-            // Update student data
+            // Update student data directly
             $student->update([
+                'name' => $request->name,
                 'nisn' => $request->nisn,
                 'class_id' => $request->class_id,
                 'birth_place' => $request->birth_place,

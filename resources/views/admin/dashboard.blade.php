@@ -171,7 +171,7 @@
                         <tbody>
                             @forelse($recentAttendances ?? [] as $attendance)
                             <tr>
-                                <td>{{ $attendance->student->user->name ?? '-' }}</td>
+                                <td>{{ $attendance->student->name ?? '-' }}</td>
                                 <td>{{ $attendance->student->class->name ?? '-' }}</td>
                                 <td>
                                     @if($attendance->clock_in)
@@ -242,7 +242,7 @@
                 @foreach($unrecordedStudents as $student)
                 <div class="d-flex justify-content-between align-items-center {{ !$loop->last ? 'mb-2' : '' }}">
                     <div>
-                        <div class="fw-medium">{{ $student->user->name }}</div>
+                        <div class="fw-medium">{{ $student->name }}</div>
                         <small class="text-muted">{{ $student->class->name ?? '-' }}</small>
                     </div>
                     <span class="badge bg-light text-dark">Belum</span>

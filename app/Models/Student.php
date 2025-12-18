@@ -12,7 +12,7 @@ class Student extends Model
     use HasFactory;
 
     protected $fillable = [
-        'user_id',
+        'name',
         'nisn',
         'class_id',
         'birth_place',
@@ -25,11 +25,6 @@ class Student extends Model
     protected $casts = [
         'birth_date' => 'date',
     ];
-
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class);
-    }
 
     public function class(): BelongsTo
     {

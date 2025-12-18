@@ -137,7 +137,7 @@
                 <td class="center">{{ $index + 1 }}</td>
                 <td>{{ $attendance->date->format('d/m/Y') }}</td>
                 <td>{{ $attendance->student->nisn ?? '-' }}</td>
-                <td>{{ $attendance->student->user->name ?? '-' }}</td>
+                <td>{{ $attendance->student->name ?? '-' }}</td>
                 <td>{{ $attendance->student->class->name ?? '-' }}</td>
                 <td class="center">
                     {{ $attendance->clock_in ? \Carbon\Carbon::parse($attendance->clock_in)->format('H:i') : '-' }}

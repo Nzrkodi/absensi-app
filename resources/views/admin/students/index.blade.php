@@ -74,7 +74,7 @@
                     @forelse($students ?? [] as $index => $student)
                     <tr>
                         <td>{{ $index + 1 }}</td>
-                        <td>{{ $student->user->name ?? '-' }}</td>
+                        <td>{{ $student->name ?? '-' }}</td>
                         <td>{{ $student->class->name ?? '-' }}</td>
                         <td>{{ $student->nisn ?? '-' }}</td>
                         <td>
@@ -110,7 +110,7 @@
             <div class="border-bottom p-3">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
-                        <h6 class="mb-1">{{ $student->user->name ?? '-' }}</h6>
+                        <h6 class="mb-1">{{ $student->name ?? '-' }}</h6>
                         <small class="text-muted">NISN: {{ $student->nisn ?? '-' }}</small>
                     </div>
                 </div>
@@ -289,11 +289,7 @@
                             <div class="invalid-feedback"></div>
                         </div>
                     </div>
-                    <div class="mt-3">
-                        <small class="text-muted">
-                            <i class="fas fa-info-circle"></i> Password default: <strong>password123</strong> (siswa dapat mengubahnya nanti)
-                        </small>
-                    </div>
+
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>

@@ -44,11 +44,9 @@ class DashboardController extends Controller
         $notRecordedToday = $totalStudents - $attendanceStats->sum('count');
         
         // Get recent attendances for selected date (ordered by clock_in time - earliest first)
-        // Only include students that have valid user relations
         $recentAttendances = Attendance::where('date', $selectedDate)
-            ->with(['student.user', 'student.class'])
+            ->with(['student', 'student.class'])
             ->whereNotNull('clock_in')
-            ->whereHas('student.user') // Only include students with valid user
             ->orderBy('clock_in', 'asc')
             ->limit(10)
             ->get();
@@ -86,8 +84,7 @@ class DashboardController extends Controller
             $recordedStudentIds = Attendance::where('date', $selectedDate)->pluck('student_id');
             $unrecordedStudents = Student::where('status', 'active')
                 ->whereNotIn('id', $recordedStudentIds)
-                ->whereHas('user') // Only include students with valid user
-                ->with(['user', 'class'])
+                ->with(['class'])
                 ->limit(5)
                 ->get();
         }

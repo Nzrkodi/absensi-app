@@ -19,7 +19,7 @@ class ReportController extends Controller
         $studentId = $request->get('student_id');
         
         // Build query
-        $query = Attendance::with(['student.user', 'student.class'])
+        $query = Attendance::with(['student', 'student.class'])
             ->whereBetween('date', [$startDate, $endDate]);
         
         if ($classId) {
@@ -60,7 +60,7 @@ class ReportController extends Controller
         
         // Get classes and students for filters
         $classes = Classes::select('id', 'name')->orderBy('name')->get();
-        $students = Student::with('user')->where('status', 'active');
+        $students = Student::where('status', 'active');
         
         if ($classId) {
             $students->where('class_id', $classId);
@@ -128,7 +128,7 @@ class ReportController extends Controller
         $studentId = $request->get('student_id');
         
         // Build query
-        $query = Attendance::with(['student.user', 'student.class'])
+        $query = Attendance::with(['student', 'student.class'])
             ->whereBetween('date', [$startDate, $endDate]);
         
         if ($classId) {
@@ -168,7 +168,7 @@ class ReportController extends Controller
         // Get filter info
         $filterInfo = [
             'class_name' => $classId ? Classes::find($classId)->name : 'Semua Kelas',
-            'student_name' => $studentId ? Student::find($studentId)->user->name : 'Semua Siswa',
+            'student_name' => $studentId ? Student::find($studentId)->name : 'Semua Siswa',
         ];
         
         return view('admin.reports.preview', compact(
@@ -191,7 +191,7 @@ class ReportController extends Controller
         $studentId = $request->get('student_id');
         
         // Build query
-        $query = Attendance::with(['student.user', 'student.class'])
+        $query = Attendance::with(['student', 'student.class'])
             ->whereBetween('date', [$startDate, $endDate]);
         
         if ($classId) {
@@ -250,7 +250,7 @@ class ReportController extends Controller
                 fputcsv($file, [
                     $attendance->date->format('d/m/Y'),
                     $attendance->student->nisn ?? '-',
-                    $attendance->student->user->name,
+                    $attendance->student->name,
                     $attendance->student->class->name ?? '-',
                     $attendance->clock_in ? Carbon::parse($attendance->clock_in)->format('H:i') : '-',
                     $attendance->clock_out ? Carbon::parse($attendance->clock_out)->format('H:i') : '-',
@@ -272,7 +272,7 @@ class ReportController extends Controller
         
         $filterInfo = [
             'class_name' => $classId ? Classes::find($classId)->name : 'Semua Kelas',
-            'student_name' => $studentId ? Student::find($studentId)->user->name : 'Semua Siswa',
+            'student_name' => $studentId ? Student::find($studentId)->name : 'Semua Siswa',
         ];
         
         return view('admin.reports.pdf', compact(
@@ -290,7 +290,7 @@ class ReportController extends Controller
         
         $filterInfo = [
             'class_name' => $classId ? Classes::find($classId)->name : 'Semua Kelas',
-            'student_name' => $studentId ? Student::find($studentId)->user->name : 'Semua Siswa',
+            'student_name' => $studentId ? Student::find($studentId)->name : 'Semua Siswa',
         ];
         
         $headers = [

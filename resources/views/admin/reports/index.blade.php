@@ -37,7 +37,7 @@
                         <option value="">Semua Siswa</option>
                         @foreach($students as $student)
                             <option value="{{ $student->id }}" {{ $studentId == $student->id ? 'selected' : '' }}>
-                                {{ $student->user->name }}
+                                {{ $student->name }}
                             </option>
                         @endforeach
                     </select>
@@ -146,7 +146,7 @@
                     <tr>
                         <td>{{ $attendance->date->format('d M Y') }}</td>
                         <td>{{ $attendance->student->nisn ?? '-' }}</td>
-                        <td>{{ $attendance->student->user->name }}</td>
+                        <td>{{ $attendance->student->name }}</td>
                         <td>{{ $attendance->student->class->name ?? '-' }}</td>
                         <td>
                             @if($attendance->clock_in)
@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     data.students.forEach(student => {
                         const option = document.createElement('option');
                         option.value = student.id;
-                        option.textContent = student.user.name;
+                        option.textContent = student.name;
                         studentSelect.appendChild(option);
                     });
                 })

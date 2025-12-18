@@ -125,7 +125,7 @@
                     <tr data-student-id="{{ $student->id }}">
                         <td>{{ $students->firstItem() + $index }}</td>
                         <td>{{ $student->nisn ?? '-' }}</td>
-                        <td>{{ $student->user->name ?? '-' }}</td>
+                        <td>{{ $student->name ?? '-' }}</td>
                         <td>{{ $student->class->name ?? '-' }}</td>
                         <td class="clock-in-time">
                             {{ $attendance && $attendance->clock_in ? \Carbon\Carbon::parse($attendance->clock_in)->format('H:i') : '-' }}
@@ -188,7 +188,7 @@
             <div class="border-bottom p-3" data-student-id="{{ $student->id }}">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <div>
-                        <h6 class="mb-1">{{ $student->user->name ?? '-' }}</h6>
+                        <h6 class="mb-1">{{ $student->name ?? '-' }}</h6>
                         <small class="text-muted">{{ $student->nisn ?? '-' }} - {{ $student->class->name ?? '-' }}</small>
                     </div>
                     <div class="status-badge">
