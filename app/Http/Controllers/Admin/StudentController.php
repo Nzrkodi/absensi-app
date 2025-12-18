@@ -82,7 +82,14 @@ class StudentController extends Controller
     public function edit($id)
     {
         try {
-            $student = Student::with(['class'])->findOrFail($id);
+            $student = Student::with(['class'])->find($id);
+            
+            if (!$student) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Siswa tidak ditemukan atau sudah dihapus'
+                ], 404);
+            }
             
             return response()->json([
                 'success' => true,
@@ -101,8 +108,8 @@ class StudentController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Student tidak ditemukan'
-            ], 404);
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -120,7 +127,12 @@ class StudentController extends Controller
         ]);
 
         try {
-            $student = Student::findOrFail($id);
+            $student = Student::find($id);
+            
+            if (!$student) {
+                return redirect()->route('admin.students.index')
+                    ->with('error', 'Siswa tidak ditemukan atau sudah dihapus');
+            }
             
             // Update student data directly
             $student->update([
@@ -146,7 +158,12 @@ class StudentController extends Controller
     public function destroy($id)
     {
         try {
-            $student = Student::findOrFail($id);
+            $student = Student::find($id);
+            
+            if (!$student) {
+                return redirect()->route('admin.students.index')
+                    ->with('error', 'Siswa tidak ditemukan atau sudah dihapus sebelumnya');
+            }
             
             // Delete related attendances first (if any)
             $student->attendances()->delete();
