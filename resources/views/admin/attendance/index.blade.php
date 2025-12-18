@@ -152,33 +152,36 @@
                                         $isSickOrPermission = $attendance && in_array($attendance->status, ['sick', 'permission']);
                                     @endphp
                                     
-                                    @if($isAbsentOrBolos)
-                                        {{-- Siswa sudah absent/bolos, tidak bisa clock in lagi --}}
-                                        <span class="badge bg-secondary">
-                                            <i class="fas fa-ban me-1"></i> 
-                                            {{ $attendance->status === 'absent' ? 'Tidak Hadir' : 'Bolos' }}
-                                        </span>
-                                    @elseif(!$attendance || (!$attendance->clock_in && !$isSickOrPermission))
+                                    @php
+                                        $isDisabledStatus = $attendance && in_array($attendance->status, ['sick', 'permission', 'absent', 'bolos']);
+                                    @endphp
+                                    
+                                    @if(!$attendance || (!$attendance->clock_in && !$isDisabledStatus))
                                         <button type="button" class="btn btn-success btn-sm btn-clock-in" data-student-id="{{ $student->id }}">
                                             <i class="fas fa-sign-in-alt"></i> Clock In
                                         </button>
-                                    @elseif($attendance && $attendance->clock_in && !$attendance->clock_out && !$isAbsentOrBolos)
+                                    @elseif($attendance && $attendance->clock_in && !$attendance->clock_out && !$isDisabledStatus)
                                         <button type="button" class="btn btn-warning btn-sm btn-clock-out" data-student-id="{{ $student->id }}">
                                             <i class="fas fa-sign-out-alt"></i> Clock Out
                                         </button>
                                     @endif
                                     
-                                    @if($isAbsentOrBolos)
-                                        {{-- Siswa sudah absent/bolos, tidak bisa input note lagi --}}
-                                        <button type="button" class="btn btn-secondary btn-sm" disabled title="Tidak dapat mengubah status {{ $attendance->status }}">
-                                            <i class="fas fa-sticky-note"></i> Note
-                                        </button>
-                                    @elseif(!$attendance || (!$attendance->clock_out && !$isSickOrPermission))
+                                    @if(!$attendance || (!$attendance->clock_out && !$isDisabledStatus))
                                         <button type="button" class="btn btn-info btn-sm btn-note" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#noteModal">
                                             <i class="fas fa-sticky-note"></i> Note
                                         </button>
                                     @else
-                                        <button type="button" class="btn btn-secondary btn-sm" disabled title="{{ $isSickOrPermission ? 'Note sudah diisi' : 'Absensi sudah lengkap' }}">
+                                        @php
+                                            $disabledReason = '';
+                                            if ($attendance && in_array($attendance->status, ['sick', 'permission'])) {
+                                                $disabledReason = 'Note sudah diisi';
+                                            } elseif ($attendance && in_array($attendance->status, ['absent', 'bolos'])) {
+                                                $disabledReason = 'Tidak dapat mengubah status ' . $attendance->status;
+                                            } else {
+                                                $disabledReason = 'Absensi sudah lengkap';
+                                            }
+                                        @endphp
+                                        <button type="button" class="btn btn-secondary btn-sm" disabled title="{{ $disabledReason }}">
                                             <i class="fas fa-sticky-note"></i> Note
                                         </button>
                                     @endif
@@ -242,33 +245,36 @@
                             $isSickOrPermission = $attendance && in_array($attendance->status, ['sick', 'permission']);
                         @endphp
                         
-                        @if($isAbsentOrBolos)
-                            {{-- Siswa sudah absent/bolos, tidak bisa clock in lagi --}}
-                            <span class="badge bg-secondary">
-                                <i class="fas fa-ban me-1"></i> 
-                                {{ $attendance->status === 'absent' ? 'Tidak Hadir' : 'Bolos' }}
-                            </span>
-                        @elseif(!$attendance || (!$attendance->clock_in && !$isSickOrPermission))
+                        @php
+                            $isDisabledStatus = $attendance && in_array($attendance->status, ['sick', 'permission', 'absent', 'bolos']);
+                        @endphp
+                        
+                        @if(!$attendance || (!$attendance->clock_in && !$isDisabledStatus))
                             <button type="button" class="btn btn-success btn-sm btn-clock-in" data-student-id="{{ $student->id }}">
                                 <i class="fas fa-sign-in-alt"></i> Clock In
                             </button>
-                        @elseif($attendance && $attendance->clock_in && !$attendance->clock_out && !$isAbsentOrBolos)
+                        @elseif($attendance && $attendance->clock_in && !$attendance->clock_out && !$isDisabledStatus)
                             <button type="button" class="btn btn-warning btn-sm btn-clock-out" data-student-id="{{ $student->id }}">
                                 <i class="fas fa-sign-out-alt"></i> Clock Out
                             </button>
                         @endif
                         
-                        @if($isAbsentOrBolos)
-                            {{-- Siswa sudah absent/bolos, tidak bisa input note lagi --}}
-                            <button type="button" class="btn btn-secondary btn-sm" disabled title="Tidak dapat mengubah status {{ $attendance->status }}">
-                                <i class="fas fa-sticky-note"></i> Note
-                            </button>
-                        @elseif(!$attendance || (!$attendance->clock_out && !$isSickOrPermission))
+                        @if(!$attendance || (!$attendance->clock_out && !$isDisabledStatus))
                             <button type="button" class="btn btn-info btn-sm btn-note" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#noteModal">
                                 <i class="fas fa-sticky-note"></i> Note
                             </button>
                         @else
-                            <button type="button" class="btn btn-secondary btn-sm" disabled title="{{ $isSickOrPermission ? 'Note sudah diisi' : 'Absensi sudah lengkap' }}">
+                            @php
+                                $disabledReason = '';
+                                if ($attendance && in_array($attendance->status, ['sick', 'permission'])) {
+                                    $disabledReason = 'Note sudah diisi';
+                                } elseif ($attendance && in_array($attendance->status, ['absent', 'bolos'])) {
+                                    $disabledReason = 'Tidak dapat mengubah status ' . $attendance->status;
+                                } else {
+                                    $disabledReason = 'Absensi sudah lengkap';
+                                }
+                            @endphp
+                            <button type="button" class="btn btn-secondary btn-sm" disabled title="{{ $disabledReason }}">
                                 <i class="fas fa-sticky-note"></i> Note
                             </button>
                         @endif
