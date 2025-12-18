@@ -29,6 +29,22 @@ Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [LoginController::class, 'login']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
+// Debug route (temporary)
+Route::get('/debug-auth', function() {
+    $user = auth()->user();
+    return response()->json([
+        'authenticated' => auth()->check(),
+        'user' => $user ? [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role
+        ] : null,
+        'session_id' => session()->getId(),
+        'csrf_token' => csrf_token()
+    ]);
+});
+
 // Admin Routes (Protected by auth middleware)
 Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     
