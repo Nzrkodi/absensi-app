@@ -21,7 +21,10 @@ class SettingController extends Controller
             }
         });
 
-        return view('admin.settings.index', compact('settings', 'allSettings'));
+        $userRole = auth()->user()->role;
+        $isAdmin = $userRole === 'admin';
+
+        return view('admin.settings.index', compact('settings', 'allSettings', 'isAdmin'));
     }
 
     public function update(Request $request)

@@ -19,9 +19,11 @@
     </div>
 @endif
 
+@if($isAdmin)
 <form action="{{ route('admin.settings.update') }}" method="POST">
     @csrf
     @method('PUT')
+@endif
     
     <div class="row">
         <!-- Pengaturan Absensi -->
@@ -44,7 +46,7 @@
                                    id="school_start_time" 
                                    name="school_start_time" 
                                    value="{{ old('school_start_time', $settings['school_start_time']) }}" 
-                                   required>
+                                   {{ $isAdmin ? 'required' : 'readonly' }}>
                             <small class="text-muted">Jam berapa siswa harus sudah masuk sekolah</small>
                             @error('school_start_time')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -63,7 +65,7 @@
                                        value="{{ old('late_tolerance_minutes', $settings['late_tolerance_minutes']) }}" 
                                        min="0" 
                                        max="120" 
-                                       required>
+                                       {{ $isAdmin ? 'required' : 'readonly' }}>
                                 <span class="input-group-text">menit</span>
                                 @error('late_tolerance_minutes')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -81,7 +83,7 @@
                                    id="auto_absent_time" 
                                    name="auto_absent_time" 
                                    value="{{ old('auto_absent_time', $settings['auto_absent_time']) }}" 
-                                   required>
+                                   {{ $isAdmin ? 'required' : 'readonly' }}>
                             <small class="text-muted">Jam berapa sistem otomatis menandai siswa absent</small>
                             @error('auto_absent_time')
                                 <div class="invalid-feedback">{{ $message }}</div>
@@ -97,7 +99,7 @@
                                    id="school_name" 
                                    name="school_name" 
                                    value="{{ old('school_name', \App\Models\Setting::get('school_name', 'SMA IT Persis Palu')) }}" 
-                                   required>
+                                   {{ $isAdmin ? 'required' : 'readonly' }}>
                             @error('school_name')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
@@ -109,7 +111,8 @@
                                        type="checkbox" 
                                        id="allow_early_clockin" 
                                        name="allow_early_clockin" 
-                                       {{ \App\Models\Setting::get('allow_early_clockin', true) ? 'checked' : '' }}>
+                                       {{ \App\Models\Setting::get('allow_early_clockin', true) ? 'checked' : '' }}
+                                       {{ $isAdmin ? '' : 'disabled' }}>
                                 <label class="form-check-label" for="allow_early_clockin">
                                     Izinkan Clock In Sebelum Jam Mulai Sekolah
                                 </label>
@@ -151,18 +154,26 @@
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fas fa-save me-2"></i>Simpan Pengaturan
-                        </button>
-                        
-                        <button type="button" class="btn btn-outline-secondary" onclick="resetToDefault()">
-                            <i class="fas fa-undo me-2"></i>Reset ke Default
-                        </button>
+                        @if($isAdmin)
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-2"></i>Simpan Pengaturan
+                            </button>
+                            
+                            <button type="button" class="btn btn-outline-secondary" onclick="resetToDefault()">
+                                <i class="fas fa-undo me-2"></i>Reset ke Default
+                            </button>
+                        @else
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <strong>Info:</strong> Anda dapat melihat pengaturan sistem, namun hanya admin yang dapat mengubahnya.
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
         </div>
     </div>
+@if($isAdmin)
 </form>
 
 <!-- Reset Form (Hidden) -->
@@ -170,6 +181,7 @@
     @csrf
     @method('POST')
 </form>
+@endif
 
 @push('scripts')
 <script>
@@ -203,9 +215,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function resetToDefault() {
-    if (confirm('Apakah Anda yakin ingin mereset semua pengaturan ke nilai default?')) {
-        document.getElementById('resetForm').submit();
-    }
+    @if($isAdmin)
+        if (confirm('Apakah Anda yakin ingin mereset semua pengaturan ke nilai default?')) {
+            document.getElementById('resetForm').submit();
+        }
+    @endif
 }
 </script>
 @endpush
