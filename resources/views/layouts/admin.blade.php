@@ -117,7 +117,7 @@
                 </a>
                 
                 <!-- Menu khusus admin -->
-                @if(auth()->user()->role === 'admin')
+                @if(auth()->check() && auth()->user()->role === 'admin')
                     <a href="{{ route('admin.students.index') }}" 
                        class="nav-link-sidebar {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -191,15 +191,15 @@
                                     data-bs-toggle="dropdown" 
                                     aria-expanded="false">
                                 <div class="d-flex align-items-center gap-2">
-                                    <span class="text-muted d-none d-sm-inline">{{ auth()->user()->name ?? 'Admin' }}</span>
-                                    @if(auth()->user()->hasAvatar())
+                                    <span class="text-muted d-none d-sm-inline">{{ auth()->check() ? auth()->user()->name : 'Admin' }}</span>
+                                    @if(auth()->check() && auth()->user()->hasAvatar())
                                         <img src="{{ auth()->user()->avatar_url }}" 
                                              alt="Avatar {{ auth()->user()->name }}" 
                                              class="rounded-circle" 
                                              style="width: 35px; height: 35px; object-fit: cover;">
                                     @else
                                         <div class="avatar-circle bg-primary rounded-circle text-white d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
-                                            {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                                            {{ auth()->check() ? substr(auth()->user()->name, 0, 1) : 'A' }}
                                         </div>
                                     @endif
                                     <i class="fas fa-chevron-down text-muted small"></i>
@@ -210,19 +210,19 @@
                                 <li>
                                     <div class="dropdown-header">
                                         <div class="d-flex align-items-center">
-                                            @if(auth()->user()->hasAvatar())
+                                            @if(auth()->check() && auth()->user()->hasAvatar())
                                                 <img src="{{ auth()->user()->avatar_url }}" 
                                                      alt="Avatar {{ auth()->user()->name }}" 
                                                      class="rounded-circle me-2" 
                                                      style="width: 30px; height: 30px; object-fit: cover;">
                                             @else
                                                 <div class="avatar-circle bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                                                    {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                                                    {{ auth()->check() ? substr(auth()->user()->name, 0, 1) : 'A' }}
                                                 </div>
                                             @endif
                                             <div>
-                                                <div class="fw-semibold">{{ auth()->user()->name ?? 'Admin' }}</div>
-                                                <small class="text-muted">{{ auth()->user()->position ?? 'Guru' }}</small>
+                                                <div class="fw-semibold">{{ auth()->check() ? auth()->user()->name : 'Admin' }}</div>
+                                                <small class="text-muted">{{ auth()->check() ? (auth()->user()->position ?? 'Guru') : 'Guru' }}</small>
                                             </div>
                                         </div>
                                     </div>
