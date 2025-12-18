@@ -110,18 +110,63 @@
                     </div>
                     
                     <div class="d-flex align-items-center gap-3">
-                        <span class="text-muted d-none d-sm-inline">{{ auth()->user()->name ?? 'Admin' }}</span>
-                        <div class="avatar-circle bg-primary rounded-circle text-white">
-                            {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
-                        </div>
-                        <form action="{{ route('logout') }}" method="POST" class="d-inline">
-                            @csrf
-                            <button type="submit" class="btn btn-link text-muted p-0">
-                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                                </svg>
+                        <!-- User Profile Dropdown -->
+                        <div class="dropdown">
+                            <button class="btn btn-link text-decoration-none p-0 d-flex align-items-center gap-2" 
+                                    type="button" 
+                                    id="userDropdown" 
+                                    data-bs-toggle="dropdown" 
+                                    aria-expanded="false">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-muted d-none d-sm-inline">{{ auth()->user()->name ?? 'Admin' }}</span>
+                                    <div class="avatar-circle bg-primary rounded-circle text-white d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                        {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                                    </div>
+                                    <i class="fas fa-chevron-down text-muted small"></i>
+                                </div>
                             </button>
-                        </form>
+                            
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="userDropdown">
+                                <li>
+                                    <div class="dropdown-header">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar-circle bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                                            </div>
+                                            <div>
+                                                <div class="fw-semibold">{{ auth()->user()->name ?? 'Admin' }}</div>
+                                                <small class="text-muted">{{ auth()->user()->position ?? 'Guru' }}</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('admin.profile.show') }}">
+                                        <i class="fas fa-user me-2"></i>Profil Saya
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('admin.profile.edit') }}">
+                                        <i class="fas fa-edit me-2"></i>Edit Profil
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('admin.settings.index') }}">
+                                        <i class="fas fa-cog me-2"></i>Pengaturan
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form action="{{ route('logout') }}" method="POST" class="d-inline w-100">
+                                        @csrf
+                                        <button type="submit" class="dropdown-item text-danger">
+                                            <i class="fas fa-sign-out-alt me-2"></i>Logout
+                                        </button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </header>
