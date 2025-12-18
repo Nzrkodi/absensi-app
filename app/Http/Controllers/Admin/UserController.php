@@ -106,6 +106,12 @@ class UserController extends Controller
                     ->with('error', 'Tidak dapat menghapus akun sendiri');
             }
             
+            // Prevent deleting default super admin
+            if ($user->email === 'aditya.wahyu@smaitpersis.sch.id') {
+                return redirect()->route('admin.users.index')
+                    ->with('error', 'Akun Super Admin default tidak dapat dihapus untuk keamanan sistem');
+            }
+            
             $user->delete();
             
             return redirect()->route('admin.users.index')

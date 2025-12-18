@@ -51,7 +51,14 @@
                                 <div class="avatar-circle bg-primary rounded-circle text-white me-2">
                                     {{ substr($user->name, 0, 1) }}
                                 </div>
-                                {{ $user->name }}
+                                <div>
+                                    {{ $user->name }}
+                                    @if($user->email === 'aditya.wahyu@smaitpersis.sch.id')
+                                        <span class="badge bg-warning text-dark ms-2">
+                                            <i class="fas fa-shield-alt"></i> Super Admin
+                                        </span>
+                                    @endif
+                                </div>
                             </div>
                         </td>
                         <td>{{ $user->email }}</td>
@@ -70,12 +77,16 @@
                         <td>{{ $user->subject ?? '-' }}</td>
                         <td>
                             <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-primary">Edit</a>
-                            @if($user->id !== auth()->id())
+                            @if($user->id !== auth()->id() && $user->email !== 'aditya.wahyu@smaitpersis.sch.id')
                             <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus user ini?')">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>
                             </form>
+                            @elseif($user->email === 'aditya.wahyu@smaitpersis.sch.id')
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-lock"></i> Protected
+                                </span>
                             @endif
                         </td>
                     </tr>

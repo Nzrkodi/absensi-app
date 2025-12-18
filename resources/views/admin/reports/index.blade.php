@@ -47,10 +47,10 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-search me-1"></i> Filter
                         </button>
-                        <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-secondary">
+                        <a href="{{ route('admin.reports.index') }}" class="btn btn-outline-danger">
                             <i class="fas fa-refresh me-1"></i> Reset
                         </a>
-                        <a href="{{ route('admin.reports.preview', request()->query()) }}" class="btn btn-primary">
+                        <a href="{{ route('admin.reports.preview', request()->query()) }}" class="btn btn-success">
                             <i class="fas fa-eye me-1"></i> Preview & Export
                         </a>
                     </div>

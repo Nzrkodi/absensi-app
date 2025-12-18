@@ -79,7 +79,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::resource('students', StudentController::class);
         
         // User management (admin only)
-        Route::resource('users', UserController::class);
+        Route::resource('users', UserController::class)->middleware('protect.admin');
     });
 });
 
