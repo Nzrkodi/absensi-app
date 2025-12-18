@@ -96,7 +96,7 @@
                                    class="form-control @error('school_name') is-invalid @enderror" 
                                    id="school_name" 
                                    name="school_name" 
-                                   value="{{ old('school_name', \App\Models\Setting::get('school_name', 'SMA Negeri 1')) }}" 
+                                   value="{{ old('school_name', \App\Models\Setting::get('school_name', 'SMA IT Persis Palu')) }}" 
                                    required>
                             @error('school_name')
                                 <div class="invalid-feedback">{{ $message }}</div>

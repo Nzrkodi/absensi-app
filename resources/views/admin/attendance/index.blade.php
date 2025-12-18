@@ -25,10 +25,10 @@
         <div class="d-flex align-items-center">
             <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
             <div>
-                <h6 class="alert-heading mb-1">Clock In Belum Diizinkan</h6>
+                <h6 class="alert-heading mb-1">Absensi Belum Diizinkan</h6>
                 <p class="mb-0">
-                    Siswa belum bisa melakukan absensi karena pengaturan "Clock In Sebelum Jam Mulai Sekolah" dimatikan. 
-                    Clock in akan tersedia mulai jam <strong>{{ $settings['school_start_time'] }}</strong>.
+                    Siswa belum bisa melakukan absensi (Clock In dan Input Note) karena pengaturan "Clock In Sebelum Jam Mulai Sekolah" dimatikan. 
+                    Fitur absensi akan tersedia mulai jam <strong>{{ $settings['school_start_time'] }}</strong>.
                 </p>
                 <small class="text-muted">
                     Waktu sekarang: <span id="currentTime">{{ \Carbon\Carbon::now('Asia/Makassar')->format('H:i:s') }}</span> | 
@@ -325,6 +325,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const timeRemainingElement = document.getElementById('timeRemaining');
             const clockInButtons = document.querySelectorAll('.btn-clock-in');
+            const noteButtons = document.querySelectorAll('.btn-note');
             
             if (currentMinutes < schoolMinutes) {
                 // Still before school start time
@@ -342,6 +343,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     button.title = `Clock in akan tersedia jam ${schoolStartTime}`;
                     button.classList.add('opacity-50');
                 });
+                
+                // Disable note buttons
+                noteButtons.forEach(button => {
+                    button.disabled = true;
+                    button.title = `Input note akan tersedia jam ${schoolStartTime}`;
+                    button.classList.add('opacity-50');
+                    button.removeAttribute('data-bs-toggle');
+                    button.removeAttribute('data-bs-target');
+                });
             } else {
                 // School time has started, enable buttons
                 if (timeRemainingElement) {
@@ -353,6 +363,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     button.disabled = false;
                     button.title = '';
                     button.classList.remove('opacity-50');
+                });
+                
+                // Enable note buttons
+                noteButtons.forEach(button => {
+                    button.disabled = false;
+                    button.title = '';
+                    button.classList.remove('opacity-50');
+                    button.setAttribute('data-bs-toggle', 'modal');
+                    button.setAttribute('data-bs-target', '#noteModal');
                 });
             }
         }
@@ -548,7 +567,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 showToast('success', data.message);
             } else {
-                showToast('error', data.message || 'Terjadi kesalahan');
+                // Check if it's early note warning
+                if (data.early_note_disabled) {
+                    showToast('warning', data.message);
+                } else {
+                    showToast('error', data.message || 'Terjadi kesalahan');
+                }
             }
         })
         .catch(error => {

@@ -90,7 +90,7 @@ class SettingController extends Controller
             Setting::set('school_start_time', '07:00', 'time', 'Waktu mulai sekolah');
             Setting::set('late_tolerance_minutes', '15', 'integer', 'Toleransi keterlambatan dalam menit');
             Setting::set('auto_absent_time', '15:00', 'time', 'Waktu otomatis menandai siswa absent');
-            Setting::set('school_name', 'SMA Negeri 1', 'string', 'Nama sekolah');
+            Setting::set('school_name', 'SMA IT Persis Palu', 'string', 'Nama sekolah');
             Setting::set('allow_early_clockin', 'true', 'boolean', 'Izinkan clock in sebelum jam mulai sekolah');
 
             return redirect()->route('admin.settings.index')

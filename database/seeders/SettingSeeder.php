@@ -33,7 +33,7 @@ class SettingSeeder extends Seeder
             ],
             [
                 'key' => 'school_name',
-                'value' => 'SMA Negeri 1',
+                'value' => 'SMA IT Persis Palu',
                 'type' => 'string',
                 'description' => 'Nama sekolah'
             ],

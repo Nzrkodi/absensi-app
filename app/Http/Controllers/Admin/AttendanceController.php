@@ -191,6 +191,22 @@ class AttendanceController extends Controller
         ]);
 
         $date = Carbon::today('Asia/Makassar');
+        $now = Carbon::now('Asia/Makassar');
+        
+        // Get settings for early clock in check
+        $settings = \App\Models\Setting::getAttendanceSettings();
+        $allowEarlyClockIn = \App\Models\Setting::get('allow_early_clockin', true);
+        
+        // Check if early note input is allowed
+        $schoolStartTime = Carbon::createFromFormat('H:i', $settings['school_start_time'], 'Asia/Makassar')->setDate($date->year, $date->month, $date->day);
+        
+        if (!$allowEarlyClockIn && $now->lt($schoolStartTime)) {
+            return response()->json([
+                'success' => false,
+                'message' => "Input note belum diizinkan. Silakan tunggu hingga jam {$settings['school_start_time']}",
+                'early_note_disabled' => true
+            ]);
+        }
         
         $attendance = Attendance::updateOrCreate(
             [
