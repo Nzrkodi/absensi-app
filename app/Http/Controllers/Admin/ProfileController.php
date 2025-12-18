@@ -45,6 +45,7 @@ class ProfileController extends Controller
             ],
             'position' => 'nullable|string|max:255',
             'subject' => 'nullable|string|max:255',
+            'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'current_password' => 'nullable|required_with:new_password',
             'new_password' => 'nullable|min:6|confirmed',
         ], [
@@ -52,6 +53,9 @@ class ProfileController extends Controller
             'email.required' => 'Email harus diisi',
             'email.email' => 'Format email tidak valid',
             'email.unique' => 'Email sudah digunakan',
+            'avatar.image' => 'File harus berupa gambar',
+            'avatar.mimes' => 'Format gambar harus jpeg, png, jpg, atau gif',
+            'avatar.max' => 'Ukuran gambar maksimal 2MB',
             'current_password.required_with' => 'Password lama harus diisi untuk mengubah password',
             'new_password.min' => 'Password baru minimal 6 karakter',
             'new_password.confirmed' => 'Konfirmasi password tidak cocok'
@@ -66,12 +70,36 @@ class ProfileController extends Controller
             }
         }
 
+        // Handle avatar upload
+        $avatarPath = $user->avatar; // Keep existing avatar by default
+        
+        if ($request->hasFile('avatar')) {
+            // Delete old avatar if exists
+            if ($user->avatar && file_exists(public_path('storage/avatars/' . $user->avatar))) {
+                unlink(public_path('storage/avatars/' . $user->avatar));
+            }
+            
+            // Create avatars directory if not exists
+            if (!file_exists(public_path('storage/avatars'))) {
+                mkdir(public_path('storage/avatars'), 0755, true);
+            }
+            
+            // Generate unique filename
+            $file = $request->file('avatar');
+            $filename = time() . '_' . $user->id . '.' . $file->getClientOriginalExtension();
+            
+            // Move file to storage/avatars
+            $file->move(public_path('storage/avatars'), $filename);
+            $avatarPath = $filename;
+        }
+
         // Update user data
         $updateData = [
             'name' => $request->name,
             'email' => $request->email,
             'position' => $request->position,
             'subject' => $request->subject,
+            'avatar' => $avatarPath,
         ];
 
         // Update password if provided
@@ -83,5 +111,22 @@ class ProfileController extends Controller
 
         return redirect()->route('admin.profile.show')
             ->with('success', 'Profil berhasil diperbarui');
+    }
+
+    /**
+     * Remove user avatar
+     */
+    public function removeAvatar()
+    {
+        $user = Auth::user();
+        
+        if ($user->avatar && file_exists(public_path('storage/avatars/' . $user->avatar))) {
+            unlink(public_path('storage/avatars/' . $user->avatar));
+        }
+        
+        $user->update(['avatar' => null]);
+        
+        return redirect()->route('admin.profile.show')
+            ->with('success', 'Foto profil berhasil dihapus');
     }
 }

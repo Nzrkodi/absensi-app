@@ -124,9 +124,16 @@
                                     aria-expanded="false">
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="text-muted d-none d-sm-inline">{{ auth()->user()->name ?? 'Admin' }}</span>
-                                    <div class="avatar-circle bg-primary rounded-circle text-white d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
-                                        {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
-                                    </div>
+                                    @if(auth()->user()->hasAvatar())
+                                        <img src="{{ auth()->user()->avatar_url }}" 
+                                             alt="Avatar {{ auth()->user()->name }}" 
+                                             class="rounded-circle" 
+                                             style="width: 35px; height: 35px; object-fit: cover;">
+                                    @else
+                                        <div class="avatar-circle bg-primary rounded-circle text-white d-flex align-items-center justify-content-center" style="width: 35px; height: 35px;">
+                                            {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                                        </div>
+                                    @endif
                                     <i class="fas fa-chevron-down text-muted small"></i>
                                 </div>
                             </button>
@@ -135,9 +142,16 @@
                                 <li>
                                     <div class="dropdown-header">
                                         <div class="d-flex align-items-center">
-                                            <div class="avatar-circle bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
-                                                {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
-                                            </div>
+                                            @if(auth()->user()->hasAvatar())
+                                                <img src="{{ auth()->user()->avatar_url }}" 
+                                                     alt="Avatar {{ auth()->user()->name }}" 
+                                                     class="rounded-circle me-2" 
+                                                     style="width: 30px; height: 30px; object-fit: cover;">
+                                            @else
+                                                <div class="avatar-circle bg-primary rounded-circle text-white d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                    {{ substr(auth()->user()->name ?? 'A', 0, 1) }}
+                                                </div>
+                                            @endif
                                             <div>
                                                 <div class="fw-semibold">{{ auth()->user()->name ?? 'Admin' }}</div>
                                                 <small class="text-muted">{{ auth()->user()->position ?? 'Guru' }}</small>

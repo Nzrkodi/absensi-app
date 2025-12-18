@@ -19,10 +19,18 @@
             <div class="card-body text-center">
                 <div class="mb-3">
                     <div class="avatar-lg mx-auto mb-3">
-                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
-                            <i class="fas fa-user fa-3x text-white"></i>
-                        </div>
+                        @if($user->hasAvatar())
+                            <img src="{{ $user->avatar_url }}" 
+                                 alt="Avatar {{ $user->name }}" 
+                                 class="rounded-circle" 
+                                 style="width: 100px; height: 100px; object-fit: cover;">
+                        @else
+                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 100px; height: 100px;">
+                                <i class="fas fa-user fa-3x text-white"></i>
+                            </div>
+                        @endif
                     </div>
+                </div>
                     <h5 class="mb-1">{{ $user->name }}</h5>
                     <p class="text-muted mb-0">{{ $user->position ?? 'Guru' }}</p>
                     @if($user->subject)
@@ -34,6 +42,17 @@
                     <a href="{{ route('admin.profile.edit') }}" class="btn btn-primary">
                         <i class="fas fa-edit me-2"></i>Edit Profil
                     </a>
+                    
+                    @if($user->hasAvatar())
+                        <form action="{{ route('admin.profile.remove-avatar') }}" method="POST" class="d-inline">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit" class="btn btn-outline-danger btn-sm w-100" 
+                                    onclick="return confirm('Yakin ingin menghapus foto profil?')">
+                                <i class="fas fa-trash me-2"></i>Hapus Foto
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>

@@ -19,7 +19,7 @@
     </div>
 @endif
 
-<form action="{{ route('admin.profile.update') }}" method="POST">
+<form action="{{ route('admin.profile.update') }}" method="POST" enctype="multipart/form-data">
     @csrf
     @method('PUT')
     
@@ -35,6 +35,39 @@
                 </div>
                 <div class="card-body">
                     <div class="row g-3">
+                        <!-- Avatar Upload -->
+                        <div class="col-12">
+                            <label class="form-label">Foto Profil</label>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="avatar-preview">
+                                    @if($user->hasAvatar())
+                                        <img src="{{ $user->avatar_url }}" 
+                                             alt="Avatar {{ $user->name }}" 
+                                             class="rounded-circle" 
+                                             style="width: 60px; height: 60px; object-fit: cover;"
+                                             id="avatarPreview">
+                                    @else
+                                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" 
+                                             style="width: 60px; height: 60px;" 
+                                             id="avatarPreview">
+                                            <i class="fas fa-user fa-lg text-white"></i>
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="flex-grow-1">
+                                    <input type="file" 
+                                           class="form-control @error('avatar') is-invalid @enderror" 
+                                           id="avatar" 
+                                           name="avatar" 
+                                           accept="image/*">
+                                    <small class="text-muted">Format: JPG, PNG, GIF. Maksimal 2MB</small>
+                                    @error('avatar')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="col-md-6">
                             <label for="name" class="form-label">
                                 Nama Lengkap <span class="text-danger">*</span>
@@ -106,9 +139,19 @@
                 </div>
                 <div class="card-body text-center">
                     <div class="mb-3">
-                        <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mx-auto" style="width: 80px; height: 80px;">
-                            <i class="fas fa-user fa-2x text-white"></i>
-                        </div>
+                        @if($user->hasAvatar())
+                            <img src="{{ $user->avatar_url }}" 
+                                 alt="Avatar {{ $user->name }}" 
+                                 class="rounded-circle mx-auto" 
+                                 style="width: 80px; height: 80px; object-fit: cover;"
+                                 id="previewAvatar">
+                        @else
+                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center mx-auto" 
+                                 style="width: 80px; height: 80px;"
+                                 id="previewAvatar">
+                                <i class="fas fa-user fa-2x text-white"></i>
+                            </div>
+                        @endif
                     </div>
                     <h6 class="mb-1" id="preview-name">{{ $user->name }}</h6>
                     <p class="text-muted mb-0" id="preview-position">{{ $user->position ?? 'Guru' }}</p>
@@ -212,6 +255,26 @@ document.addEventListener('DOMContentLoaded', function() {
     
     subjectInput.addEventListener('input', function() {
         previewSubject.textContent = this.value || '';
+    });
+    
+    // Avatar preview
+    const avatarInput = document.getElementById('avatar');
+    const avatarPreview = document.getElementById('avatarPreview');
+    const previewAvatar = document.getElementById('previewAvatar');
+    
+    avatarInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Update main preview
+                avatarPreview.innerHTML = `<img src="${e.target.result}" class="rounded-circle" style="width: 60px; height: 60px; object-fit: cover;">`;
+                
+                // Update side preview
+                previewAvatar.innerHTML = `<img src="${e.target.result}" class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">`;
+            };
+            reader.readAsDataURL(file);
+        }
     });
 });
 </script>

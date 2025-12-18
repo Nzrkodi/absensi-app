@@ -24,6 +24,7 @@ class User extends Authenticatable
         'role',
         'position',
         'subject',
+        'avatar',
     ];
 
     /**
@@ -45,4 +46,32 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    /**
+     * Get the user's avatar URL
+     */
+    public function getAvatarUrlAttribute()
+    {
+        if ($this->avatar && file_exists(public_path('storage/avatars/' . $this->avatar))) {
+            return asset('storage/avatars/' . $this->avatar);
+        }
+        
+        return null;
+    }
+
+    /**
+     * Get avatar or default initial
+     */
+    public function getAvatarOrInitialAttribute()
+    {
+        return $this->avatar_url ?: substr($this->name, 0, 1);
+    }
+
+    /**
+     * Check if user has avatar
+     */
+    public function hasAvatar()
+    {
+        return $this->avatar && file_exists(public_path('storage/avatars/' . $this->avatar));
+    }
 }
