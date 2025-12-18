@@ -10,6 +10,74 @@
     @vite(['resources/scss/app.scss', 'resources/js/app.js'])
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Custom Alert Styles -->
+    <style>
+        .alert {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border-left: 4px solid #28a745;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
+            border-left: 4px solid #dc3545;
+        }
+        
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-left: 4px solid #ffc107;
+        }
+        
+        .alert-info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .alert .fas {
+            margin-right: 8px;
+        }
+        
+        .alert-permanent {
+            /* Class untuk alert yang tidak auto-hide */
+        }
+        
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideOutUp {
+            from {
+                opacity: 1;
+                transform: translateY(0);
+            }
+            to {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+        }
+        
+        .alert-slide-in {
+            animation: slideInDown 0.3s ease-out;
+        }
+        
+        .alert-slide-out {
+            animation: slideOutUp 0.3s ease-in;
+        }
+    </style>
 </head>
 <body class="bg-light">
     <div class="d-flex min-vh-100">
@@ -282,6 +350,84 @@
         });
     </script>
     
+    <!-- Auto-hide Alert Script -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Auto-hide Bootstrap alerts after 3 seconds
+        const alerts = document.querySelectorAll('.alert:not(.alert-permanent)');
+        
+        alerts.forEach(function(alert) {
+            // Add slide-in animation
+            alert.classList.add('alert-slide-in');
+            
+            // Auto-hide after 3 seconds
+            setTimeout(function() {
+                if (alert && alert.parentNode) {
+                    // Add slide-out animation
+                    alert.classList.remove('alert-slide-in');
+                    alert.classList.add('alert-slide-out');
+                    
+                    // Remove from DOM after animation
+                    setTimeout(function() {
+                        if (alert && alert.parentNode) {
+                            alert.remove();
+                        }
+                    }, 300);
+                }
+            }, 3000);
+        });
+        
+        // Handle manual close button with animation
+        const closeButtons = document.querySelectorAll('.alert .btn-close');
+        closeButtons.forEach(function(button) {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const alert = this.closest('.alert');
+                if (alert) {
+                    alert.classList.remove('alert-slide-in');
+                    alert.classList.add('alert-slide-out');
+                    
+                    setTimeout(function() {
+                        if (alert && alert.parentNode) {
+                            alert.remove();
+                        }
+                    }, 300);
+                }
+            });
+        });
+        
+        // Progress bar for auto-hide (optional visual indicator)
+        alerts.forEach(function(alert) {
+            if (!alert.classList.contains('alert-permanent')) {
+                const progressBar = document.createElement('div');
+                progressBar.style.cssText = `
+                    position: absolute;
+                    bottom: 0;
+                    left: 0;
+                    height: 3px;
+                    background: rgba(0,0,0,0.2);
+                    width: 100%;
+                    animation: shrink 3s linear;
+                `;
+                
+                alert.style.position = 'relative';
+                alert.style.overflow = 'hidden';
+                alert.appendChild(progressBar);
+            }
+        });
+    });
+    
+    // Add CSS animation for progress bar
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes shrink {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+    `;
+    document.head.appendChild(style);
+    </script>
+
     @stack('scripts')
 </body>
 </html>
