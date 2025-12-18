@@ -20,10 +20,9 @@ class AttendanceController extends Controller
         
         $query = Student::query()
             ->select('students.*')
-            ->join('users', 'students.user_id', '=', 'users.id')
             ->leftJoin('classes', 'students.class_id', '=', 'classes.id')
             ->where('students.status', 'active')
-            ->with(['user', 'class']);
+            ->with(['class']);
 
         // Add attendance data for the selected date
         $query->with(['attendances' => function($q) use ($date) {
@@ -34,7 +33,7 @@ class AttendanceController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('students.nisn', 'like', "%{$search}%")
-                    ->orWhere('users.name', 'like', "%{$search}%");
+                    ->orWhere('students.name', 'like', "%{$search}%");
             });
         }
 
@@ -42,7 +41,7 @@ class AttendanceController extends Controller
             $query->where('students.class_id', $request->class_id);
         }
 
-        $students = $query->orderBy('users.name', 'asc')->paginate(15);
+        $students = $query->orderBy('students.name', 'asc')->paginate(15);
         
         // Get classes for filter
         $classes = \App\Models\Classes::select('id', 'name')->get();
