@@ -60,6 +60,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     
     // Settings routes (accessible by both admin and teacher)
     Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
+    Route::put('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+    Route::post('/settings/reset', [\App\Http\Controllers\Admin\SettingController::class, 'reset'])->name('settings.reset');
     
     // Profile routes (accessible by both admin and teacher)
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
@@ -69,9 +71,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     
     // Admin-only routes
     Route::middleware('role:admin')->group(function () {
-        // Settings management (admin only)
-        Route::put('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
-        Route::post('/settings/reset', [\App\Http\Controllers\Admin\SettingController::class, 'reset'])->name('settings.reset');
+        // Settings management (admin only - reset and test only)
         Route::get('/settings/test', [\App\Http\Controllers\Admin\SettingController::class, 'test'])->name('settings.test');
         
         // Holiday routes (admin only)
