@@ -48,9 +48,17 @@
                         <td>{{ $index + 1 }}</td>
                         <td>
                             <div class="d-flex align-items-center">
-                                <div class="avatar-circle bg-primary rounded-circle text-white me-2">
-                                    {{ substr($user->name, 0, 1) }}
-                                </div>
+                                @if($user->hasAvatar())
+                                    <img src="{{ $user->avatar_url }}" 
+                                         alt="{{ $user->name }}" 
+                                         class="rounded-circle me-2" 
+                                         style="width: 40px; height: 40px; object-fit: cover;">
+                                @else
+                                    <div class="avatar-circle bg-primary rounded-circle text-white me-2 d-flex align-items-center justify-content-center" 
+                                         style="width: 40px; height: 40px; font-size: 16px; font-weight: bold;">
+                                        {{ substr($user->name, 0, 1) }}
+                                    </div>
+                                @endif
                                 <div>
                                     {{ $user->name }}
                                     @if($user->email === 'aditya.wahyu@smaitpersis.sch.id')
