@@ -157,7 +157,7 @@
                                     @endphp
                                     
                                     @if(!$attendance || (!$attendance->clock_in && !$isDisabledStatus))
-                                        <button type="button" class="btn btn-success btn-sm btn-clock-in" data-student-id="{{ $student->id }}">
+                                        <button type="button" class="btn btn-success btn-sm btn-clock-in" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#manualClockInModal">
                                             <i class="fas fa-sign-in-alt"></i> Clock In
                                         </button>
                                     @elseif($attendance && $attendance->clock_in && !$attendance->clock_out && !$isDisabledStatus)
@@ -250,7 +250,7 @@
                         @endphp
                         
                         @if(!$attendance || (!$attendance->clock_in && !$isDisabledStatus))
-                            <button type="button" class="btn btn-success btn-sm btn-clock-in" data-student-id="{{ $student->id }}">
+                            <button type="button" class="btn btn-success btn-sm btn-clock-in" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#manualClockInModal">
                                 <i class="fas fa-sign-in-alt"></i> Clock In
                             </button>
                         @elseif($attendance && $attendance->clock_in && !$attendance->clock_out && !$isDisabledStatus)
@@ -294,6 +294,68 @@
     </div>
 </div>
 
+<!-- Manual Clock In Modal -->
+<div class="modal fade" id="manualClockInModal" tabindex="-1" aria-labelledby="manualClockInModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="manualClockInModalLabel">Clock In Manual</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="manualClockInForm">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Fitur Clock In Manual:</strong> Gunakan untuk mencatat waktu kedatangan siswa yang sebenarnya, terutama ketika Anda terlambat datang ke sekolah.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Pilih Mode Clock In</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="clock_mode" id="currentTime" value="current" checked>
+                            <label class="form-check-label" for="currentTime">
+                                <strong>Waktu Sekarang</strong> - <span id="currentTimeDisplay">{{ \Carbon\Carbon::now('Asia/Makassar')->format('H:i') }}</span>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="clock_mode" id="manualTime" value="manual">
+                            <label class="form-check-label" for="manualTime">
+                                <strong>Waktu Manual</strong> - Input waktu kedatangan yang sebenarnya
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="manualTimeInput" style="display: none;">
+                        <label for="manual_time" class="form-label">Waktu Kedatangan <span class="text-danger">*</span></label>
+                        <input type="time" class="form-control" id="manual_time" name="manual_time">
+                        <div class="form-text">
+                            <i class="fas fa-lightbulb text-warning me-1"></i>
+                            Masukkan waktu kedatangan siswa yang sebenarnya. Status akan otomatis ditentukan berdasarkan waktu ini.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="manual_notes" class="form-label">Keterangan (Opsional)</label>
+                        <textarea class="form-control" id="manual_notes" name="notes" rows="2" placeholder="Contoh: Siswa datang terlambat karena macet..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-warning" id="lateWarning" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Perhatian:</strong> Waktu yang dimasukkan akan menghasilkan status <strong>TERLAMBAT</strong> karena melewati batas toleransi keterlambatan ({{ $settings['school_start_time'] }} + {{ $settings['late_tolerance_minutes'] }} menit).
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-success">
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        <i class="fas fa-sign-in-alt me-1"></i> Clock In
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Note Modal -->
 <div class="modal fade" id="noteModal" tabindex="-1" aria-labelledby="noteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -333,10 +395,12 @@
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let currentStudentId = null;
+    let currentClockInStudentId = null;
     
     // Early clock in settings
     const allowEarlyClockIn = {{ $allowEarlyClockIn ? 'true' : 'false' }};
     const schoolStartTime = '{{ $settings["school_start_time"] }}';
+    const lateToleranceMinutes = {{ $settings['late_tolerance_minutes'] }};
     const isHoliday = {{ $isHoliday ? 'true' : 'false' }};
     
     // Update current time and check early clock in status
@@ -347,7 +411,13 @@ document.addEventListener('DOMContentLoaded', function() {
             hour12: false 
         });
         
-        // Update current time display
+        // Update current time display in modal
+        const currentTimeDisplay = document.getElementById('currentTimeDisplay');
+        if (currentTimeDisplay) {
+            currentTimeDisplay.textContent = currentTimeStr.substring(0, 5); // HH:MM format
+        }
+        
+        // Update current time display in warning
         const currentTimeElement = document.getElementById('currentTime');
         if (currentTimeElement) {
             currentTimeElement.textContent = currentTimeStr;
@@ -380,6 +450,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     button.disabled = true;
                     button.title = `Clock in akan tersedia jam ${schoolStartTime}`;
                     button.classList.add('opacity-50');
+                    button.removeAttribute('data-bs-toggle');
+                    button.removeAttribute('data-bs-target');
                 });
                 
                 // Disable note buttons
@@ -401,6 +473,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     button.disabled = false;
                     button.title = '';
                     button.classList.remove('opacity-50');
+                    button.setAttribute('data-bs-toggle', 'modal');
+                    button.setAttribute('data-bs-target', '#manualClockInModal');
                 });
                 
                 // Enable note buttons
@@ -427,59 +501,124 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = url.toString();
     });
     
-    // Clock In buttons
+    // Manual Clock In Modal handlers
     document.querySelectorAll('.btn-clock-in').forEach(button => {
         button.addEventListener('click', function() {
-            const studentId = this.getAttribute('data-student-id');
-            const originalText = this.innerHTML;
+            currentClockInStudentId = this.getAttribute('data-student-id');
             
-            // Show loading
-            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Loading...';
-            this.disabled = true;
+            // Reset form
+            document.getElementById('manualClockInForm').reset();
+            document.getElementById('currentTime').checked = true;
+            document.getElementById('manualTimeInput').style.display = 'none';
+            document.getElementById('lateWarning').style.display = 'none';
+        });
+    });
+    
+    // Clock mode radio button handlers
+    document.querySelectorAll('input[name="clock_mode"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const manualTimeInput = document.getElementById('manualTimeInput');
+            const manualTimeField = document.getElementById('manual_time');
             
-            fetch(`/admin/attendance/${studentId}/clock-in`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update UI
-                    const row = document.querySelector(`[data-student-id="${studentId}"]`);
-                    row.querySelector('.clock-in-time').textContent = data.data.clock_in;
-                    row.querySelector('.status-badge').innerHTML = data.data.status_badge;
-                    
-                    // Change button to clock out
-                    this.className = 'btn btn-warning btn-sm btn-clock-out';
-                    this.innerHTML = '<i class="fas fa-sign-out-alt"></i> Clock Out';
-                    this.setAttribute('data-student-id', studentId);
-                    
-                    // Add new event listener for clock out
-                    this.removeEventListener('click', arguments.callee);
-                    addClockOutListener(this);
-                    
-                    showToast('success', data.message);
+            if (this.value === 'manual') {
+                manualTimeInput.style.display = 'block';
+                manualTimeField.required = true;
+                checkLateStatus();
+            } else {
+                manualTimeInput.style.display = 'none';
+                manualTimeField.required = false;
+                document.getElementById('lateWarning').style.display = 'none';
+            }
+        });
+    });
+    
+    // Manual time input change handler
+    document.getElementById('manual_time').addEventListener('change', checkLateStatus);
+    
+    function checkLateStatus() {
+        const manualTimeValue = document.getElementById('manual_time').value;
+        const lateWarning = document.getElementById('lateWarning');
+        
+        if (manualTimeValue) {
+            // Calculate late threshold
+            const [schoolHour, schoolMinute] = schoolStartTime.split(':').map(Number);
+            const schoolMinutes = schoolHour * 60 + schoolMinute;
+            const lateThresholdMinutes = schoolMinutes + lateToleranceMinutes;
+            
+            const [inputHour, inputMinute] = manualTimeValue.split(':').map(Number);
+            const inputMinutes = inputHour * 60 + inputMinute;
+            
+            if (inputMinutes > lateThresholdMinutes) {
+                lateWarning.style.display = 'block';
+            } else {
+                lateWarning.style.display = 'none';
+            }
+        } else {
+            lateWarning.style.display = 'none';
+        }
+    }
+    
+    // Manual Clock In form submission
+    document.getElementById('manualClockInForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!currentClockInStudentId) return;
+        
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const spinner = submitBtn.querySelector('.spinner-border');
+        
+        // Show loading
+        submitBtn.disabled = true;
+        spinner.classList.remove('d-none');
+        
+        fetch(`/admin/attendance/${currentClockInStudentId}/clock-in`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update UI
+                const row = document.querySelector(`[data-student-id="${currentClockInStudentId}"]`);
+                row.querySelector('.clock-in-time').textContent = data.data.clock_in;
+                row.querySelector('.status-badge').innerHTML = data.data.status_badge;
+                
+                // Change button to clock out
+                const clockInBtn = row.querySelector('.btn-clock-in');
+                clockInBtn.className = 'btn btn-warning btn-sm btn-clock-out';
+                clockInBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Clock Out';
+                clockInBtn.setAttribute('data-student-id', currentClockInStudentId);
+                clockInBtn.removeAttribute('data-bs-toggle');
+                clockInBtn.removeAttribute('data-bs-target');
+                
+                // Add new event listener for clock out
+                addClockOutListener(clockInBtn);
+                
+                // Hide modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('manualClockInModal'));
+                modal.hide();
+                
+                showToast('success', data.message);
+            } else {
+                // Check if it's early clock in warning
+                if (data.early_clockin_disabled) {
+                    showToast('warning', data.message);
                 } else {
-                    // Check if it's early clock in warning
-                    if (data.early_clockin_disabled) {
-                        showToast('warning', data.message);
-                    } else {
-                        showToast('error', data.message);
-                    }
-                    this.innerHTML = originalText;
+                    showToast('error', data.message);
                 }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('error', 'Terjadi kesalahan saat clock in');
-                this.innerHTML = originalText;
-            })
-            .finally(() => {
-                this.disabled = false;
-            });
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'Terjadi kesalahan saat clock in');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            spinner.classList.add('d-none');
         });
     });
     
@@ -597,6 +736,81 @@ document.addEventListener('DOMContentLoaded', function() {
                     noteButton.removeAttribute('data-bs-toggle');
                     noteButton.removeAttribute('data-bs-target');
                     noteButton.innerHTML = '<i class="fas fa-sticky-note"></i> Note';
+                }
+                
+                // Hide modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('noteModal'));
+                modal.hide();
+                
+                showToast('success', data.message);
+            } else {
+                // Check if it's early note warning
+                if (data.early_note_disabled) {
+                    showToast('warning', data.message);
+                } else {
+                    showToast('error', data.message || 'Terjadi kesalahan');
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'Terjadi kesalahan saat menyimpan');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            spinner.classList.add('d-none');
+        });
+    });
+    
+    // Reset forms when modals are closed
+    document.getElementById('manualClockInModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('manualClockInForm').reset();
+        currentClockInStudentId = null;
+    });
+    
+    document.getElementById('noteModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('noteForm').reset();
+        currentStudentId = null;
+    });
+    
+    // Toast notification function
+    function showToast(type, message) {
+        // Create toast element
+        const toastHtml = `
+            <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'danger'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle'} me-2"></i>
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        `;
+        
+        // Add to toast container (create if doesn't exist)
+        let toastContainer = document.querySelector('.toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+        
+        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
+        
+        // Show toast
+        const toastElement = toastContainer.lastElementChild;
+        const toast = new bootstrap.Toast(toastElement);
+        toast.show();
+        
+        // Remove from DOM after hidden
+        toastElement.addEventListener('hidden.bs.toast', function() {
+            this.remove();
+        });
+    }
+});
+</script>
+@endpush-sticky-note"></i> Note';
                 }
                 
                 // Hide modal

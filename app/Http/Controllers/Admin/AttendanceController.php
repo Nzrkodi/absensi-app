@@ -7,6 +7,7 @@ use App\Models\Attendance;
 use App\Models\Student;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceController extends Controller
 {
@@ -72,6 +73,13 @@ class AttendanceController extends Controller
         $date = Carbon::today('Asia/Makassar');
         $now = Carbon::now('Asia/Makassar');
         
+        // Validate request for manual time
+        $request->validate([
+            'clock_mode' => 'required|in:current,manual',
+            'manual_time' => 'required_if:clock_mode,manual|date_format:H:i',
+            'notes' => 'nullable|string|max:500'
+        ]);
+        
         // Check if attendance already exists for today
         $attendance = Attendance::where('student_id', $student->id)
             ->where('date', $date)
@@ -88,10 +96,33 @@ class AttendanceController extends Controller
         $settings = \App\Models\Setting::getAttendanceSettings();
         $allowEarlyClockIn = \App\Models\Setting::get('allow_early_clockin', true);
         
-        // Check if early clock in is allowed
+        // Determine clock in time based on mode
+        $clockInTime = $now;
+        if ($request->clock_mode === 'manual' && $request->manual_time) {
+            $clockInTime = Carbon::createFromFormat('H:i', $request->manual_time, 'Asia/Makassar')
+                ->setDate($date->year, $date->month, $date->day);
+            
+            // Validate manual time is not in the future
+            if ($clockInTime->gt($now)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Waktu clock in tidak boleh di masa depan'
+                ]);
+            }
+            
+            // Validate manual time is not too far in the past (same day only)
+            if ($clockInTime->format('Y-m-d') !== $date->format('Y-m-d')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Waktu clock in harus pada hari yang sama'
+                ]);
+            }
+        }
+        
+        // Check if early clock in is allowed (only for current time mode)
         $schoolStartTime = Carbon::createFromFormat('H:i', $settings['school_start_time'], 'Asia/Makassar')->setDate($date->year, $date->month, $date->day);
         
-        if (!$allowEarlyClockIn && $now->lt($schoolStartTime)) {
+        if (!$allowEarlyClockIn && $request->clock_mode === 'current' && $now->lt($schoolStartTime)) {
             return response()->json([
                 'success' => false,
                 'message' => "Clock in belum diizinkan. Silakan tunggu hingga jam {$settings['school_start_time']}",
@@ -100,46 +131,60 @@ class AttendanceController extends Controller
         }
         
         // Debug: Log current settings
-        \Log::info('Clock In Settings', [
+        Log::info('Clock In Settings', [
             'school_start_time' => $settings['school_start_time'],
             'late_tolerance_minutes' => $settings['late_tolerance_minutes'],
+            'clock_mode' => $request->clock_mode,
+            'clock_in_time' => $clockInTime->format('H:i:s'),
             'current_time' => $now->format('H:i:s'),
             'date' => $date->format('Y-m-d')
         ]);
         
-        $schoolStartTime = Carbon::createFromFormat('H:i', $settings['school_start_time'], 'Asia/Makassar')->setDate($date->year, $date->month, $date->day);
         $lateThreshold = $schoolStartTime->copy()->addMinutes($settings['late_tolerance_minutes']);
         
-        \Log::info('Time Comparison', [
+        Log::info('Time Comparison', [
             'school_start' => $schoolStartTime->format('H:i:s'),
             'late_threshold' => $lateThreshold->format('H:i:s'),
-            'current_time' => $now->format('H:i:s'),
-            'is_late' => $now->gt($lateThreshold)
+            'clock_in_time' => $clockInTime->format('H:i:s'),
+            'is_late' => $clockInTime->gt($lateThreshold)
         ]);
         
-        $status = $now->gt($lateThreshold) ? 'late' : 'present';
+        $status = $clockInTime->gt($lateThreshold) ? 'late' : 'present';
+        
+        // Prepare notes
+        $notes = $request->notes;
+        if ($request->clock_mode === 'manual') {
+            $manualNote = "Clock in manual pada jam {$clockInTime->format('H:i')}";
+            $notes = $notes ? $manualNote . ' - ' . $notes : $manualNote;
+        }
 
         if (!$attendance) {
             $attendance = Attendance::create([
                 'student_id' => $student->id,
                 'date' => $date,
-                'clock_in' => $now->format('H:i:s'),
-                'status' => $status
+                'clock_in' => $clockInTime->format('H:i:s'),
+                'status' => $status,
+                'notes' => $notes
             ]);
         } else {
             // Update clock_in and status, regardless of previous status
+            $existingNotes = $attendance->status === 'absent' ? 'Clock in setelah ditandai absent' : $attendance->notes;
+            $finalNotes = $notes ? ($existingNotes ? $existingNotes . ' | ' . $notes : $notes) : $existingNotes;
+            
             $attendance->update([
-                'clock_in' => $now->format('H:i:s'),
+                'clock_in' => $clockInTime->format('H:i:s'),
                 'status' => $status,
-                'notes' => $attendance->status === 'absent' ? 'Clock in setelah ditandai absent' : $attendance->notes
+                'notes' => $finalNotes
             ]);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Clock in berhasil',
+            'message' => $request->clock_mode === 'manual' 
+                ? "Clock in berhasil dengan waktu manual {$clockInTime->format('H:i')}" 
+                : 'Clock in berhasil',
             'data' => [
-                'clock_in' => $now->format('H:i'),
+                'clock_in' => $clockInTime->format('H:i'),
                 'status' => $status,
                 'status_badge' => $attendance->status_badge
             ]

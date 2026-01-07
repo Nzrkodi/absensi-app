@@ -80,7 +80,7 @@
         
         /* Sidebar Navigation Styles */
         .nav-dropdown {
-            margin: 0.25rem 0;
+            margin: 0.125rem 0;
             position: relative;
         }
         
@@ -164,6 +164,13 @@
         
         .nav-text {
             flex: 1;
+        }
+        
+        /* Navigation Divider */
+        .nav-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
+            margin: 0.5rem 1.5rem;
         }
         
         /* Modern Table Styles */
@@ -507,6 +514,9 @@
                 
                 <!-- Menu khusus admin -->
                 @if(auth()->check() && auth()->user()->role === 'admin')
+                    <!-- Divider -->
+                    <div class="nav-divider"></div>
+                    
                     <a href="{{ route('admin.students.index') }}" 
                        class="nav-link-sidebar {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -544,6 +554,9 @@
                         <span class="nav-text">User</span>
                     </a>
                     
+                    <!-- Divider -->
+                    <div class="nav-divider"></div>
+                    
                     <!-- Dropdown Menu Laporan -->
                     <div class="nav-dropdown" onmouseenter="showDropdown('reportDropdown')" onmouseleave="hideDropdown('reportDropdown')">
                         <a href="#" class="nav-link-sidebar nav-dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
@@ -571,6 +584,9 @@
                         </svg>
                         <span class="nav-text">Hari Libur</span>
                     </a>
+                    
+                    <!-- Divider -->
+                    <div class="nav-divider"></div>
                 @endif
                 
                 <!-- Menu pengaturan untuk semua role (tapi dengan akses berbeda) -->

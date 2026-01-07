@@ -19,8 +19,15 @@ class Kernel extends ConsoleKernel
             $currentTime = now('Asia/Makassar')->format('H:i');
             
             if ($currentTime === $autoAbsentTime) {
-                Log::info("Auto absent time reached ({$autoAbsentTime}), dispatching job...");
-                \App\Jobs\UpdateAbsentStudents::dispatch();
+                Log::info("Auto absent time reached ({$autoAbsentTime}), executing job directly...");
+                
+                // Execute job directly instead of dispatching to queue
+                try {
+                    (new \App\Jobs\UpdateAbsentStudents())->handle();
+                    Log::info("UpdateAbsentStudents job executed successfully at {$currentTime}");
+                } catch (\Exception $e) {
+                    Log::error("UpdateAbsentStudents job failed: " . $e->getMessage());
+                }
             }
         })
         ->everyMinute()
