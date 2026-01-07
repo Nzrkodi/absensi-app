@@ -42,31 +42,33 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation, WithBat
             if (isset($this->classes[$className])) {
                 $classId = $this->classes[$className];
             } else {
-                // Jika tidak ketemu, coba tambahkan "Kelas " di depan
-                $classNameWithPrefix = "Kelas " . $className;
-                if (isset($this->classes[$classNameWithPrefix])) {
-                    $classId = $this->classes[$classNameWithPrefix];
+                // Mapping untuk berbagai format kelas ke format sederhana (10, 11, 12)
+                $classMapping = [
+                    // Format romawi ke angka
+                    'X' => '10', 'x' => '10',
+                    'XI' => '11', 'xi' => '11', 
+                    'XII' => '12', 'xii' => '12',
+                    // Format dengan kelas
+                    'Kelas 10' => '10', 'kelas 10' => '10',
+                    'Kelas 11' => '11', 'kelas 11' => '11',
+                    'Kelas 12' => '12', 'kelas 12' => '12',
+                    'Kelas X' => '10', 'kelas x' => '10',
+                    'Kelas XI' => '11', 'kelas xi' => '11',
+                    'Kelas XII' => '12', 'kelas xii' => '12'
+                ];
+                
+                // Coba mapping
+                if (isset($classMapping[$className])) {
+                    $mappedClass = $classMapping[$className];
+                    if (isset($this->classes[$mappedClass])) {
+                        $classId = $this->classes[$mappedClass];
+                    }
                 } else {
-                    // Mapping untuk format lama (X, XI, XII) ke format baru (10, 11, 12)
-                    $legacyMapping = [
-                        'X' => '10', 'x' => '10',
-                        'XI' => '11', 'xi' => '11', 
-                        'XII' => '12', 'xii' => '12'
-                    ];
-                    
-                    if (isset($legacyMapping[$className])) {
-                        $newClassName = "Kelas " . $legacyMapping[$className];
-                        if (isset($this->classes[$newClassName])) {
-                            $classId = $this->classes[$newClassName];
-                        }
-                    } else {
-                        // Coba cari dengan case-insensitive
-                        foreach ($this->classes as $dbClassName => $dbClassId) {
-                            if (strcasecmp($dbClassName, $className) === 0 || 
-                                strcasecmp($dbClassName, $classNameWithPrefix) === 0) {
-                                $classId = $dbClassId;
-                                break;
-                            }
+                    // Coba cari dengan case-insensitive
+                    foreach ($this->classes as $dbClassName => $dbClassId) {
+                        if (strcasecmp($dbClassName, $className) === 0) {
+                            $classId = $dbClassId;
+                            break;
                         }
                     }
                 }

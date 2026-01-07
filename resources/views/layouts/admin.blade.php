@@ -77,6 +77,395 @@
         .alert-slide-out {
             animation: slideOutUp 0.3s ease-in;
         }
+        
+        /* Sidebar Navigation Styles */
+        .nav-dropdown {
+            margin: 0.25rem 0;
+            position: relative;
+        }
+        
+        .nav-dropdown-toggle {
+            position: relative;
+            display: flex !important;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .nav-dropdown-toggle .dropdown-arrow {
+            transition: transform 0.3s ease;
+            font-size: 0.75rem;
+            margin-left: auto;
+        }
+        
+        .nav-dropdown:hover .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .nav-dropdown-menu {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 0.5rem;
+            margin: 0.25rem 0;
+            padding: 0.5rem 0;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.3s ease;
+            transform: translateY(-10px);
+        }
+        
+        .nav-dropdown-menu.show {
+            max-height: 200px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .nav-sub {
+            padding-left: 3.5rem !important;
+            font-size: 0.9rem;
+            margin: 0.125rem 0;
+        }
+        
+        .nav-sub i {
+            width: 16px;
+            margin-right: 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .nav-link-sidebar {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            border-radius: 0.5rem;
+            margin: 0.125rem 0.75rem;
+        }
+        
+        .nav-link-sidebar:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateX(4px);
+        }
+        
+        .nav-link-sidebar.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .nav-link-sidebar svg,
+        .nav-link-sidebar i {
+            width: 20px;
+            height: 20px;
+            margin-right: 0.75rem;
+            flex-shrink: 0;
+        }
+        
+        .nav-text {
+            flex: 1;
+        }
+        
+        /* Modern Table Styles */
+        .table-modern {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border: none;
+        }
+        
+        .table-modern thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .table-modern thead th {
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            padding: 1rem 0.75rem;
+            border: none;
+        }
+        
+        .table-modern tbody tr {
+            transition: all 0.3s ease;
+            border: none;
+        }
+        
+        .table-row-hover:hover {
+            background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .table-modern td {
+            padding: 1rem 0.75rem;
+            border: none;
+            border-bottom: 1px solid #f1f3f4;
+            vertical-align: middle;
+        }
+        
+        .table-number {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #1976d2;
+            font-size: 0.875rem;
+        }
+        
+        .violation-name strong {
+            color: #2c3e50;
+            font-size: 0.95rem;
+        }
+        
+        .badge-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .badge-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .badge-danger {
+            background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
+            color: #721c24;
+            border: 1px solid #f1b0b7;
+        }
+        
+        .badge-points {
+            background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);
+            color: #01579b;
+            border: 1px solid #b3e5fc;
+        }
+        
+        .badge {
+            padding: 0.5rem 0.75rem;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+        
+        .btn-toggle {
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.75rem;
+            padding: 0.4rem 0.8rem;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-toggle-active {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+        }
+        
+        .btn-toggle-active:hover {
+            background: linear-gradient(135deg, #c3e6cb 0%, #a3d9a4 100%);
+            transform: translateY(-1px);
+        }
+        
+        .btn-toggle-inactive {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: #6c757d;
+        }
+        
+        .btn-toggle-inactive:hover {
+            background: linear-gradient(135deg, #e9ecef 0%, #dee2e6 100%);
+            transform: translateY(-1px);
+        }
+        
+        .description-text {
+            color: #6c757d;
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .btn-action {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-edit {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+        }
+        
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+        }
+        
+        .btn-delete {
+            background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
+            color: #721c24;
+        }
+        
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #f1b0b7 0%, #e17055 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+        }
+        
+        .empty-state {
+            padding: 3rem 2rem;
+        }
+        
+        .empty-state i {
+            color: #dee2e6 !important;
+        }
+        
+        /* Student Violations Table Specific Styles */
+        .date-info {
+            text-align: center;
+        }
+        
+        .date-main {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+        
+        .date-sub {
+            color: #6c757d;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+        
+        .student-info {
+            min-width: 150px;
+        }
+        
+        .student-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .student-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.125rem;
+        }
+        
+        .student-nisn, .student-class {
+            font-size: 0.75rem;
+            color: #6c757d;
+        }
+        
+        .violation-info {
+            min-width: 180px;
+        }
+        
+        .violation-name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .violation-badges {
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+        }
+        
+        .location-text, .reporter-text {
+            color: #6c757d;
+            font-size: 0.875rem;
+            font-style: italic;
+        }
+        
+        .badge-status {
+            font-weight: 500;
+            padding: 0.5rem 0.75rem;
+        }
+        
+        .badge-status-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .badge-status-danger {
+            background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
+            color: #721c24;
+            border: 1px solid #f1b0b7;
+        }
+        
+        .badge-status-success {
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .btn-view {
+            background: linear-gradient(135deg, #e1f5fe 0%, #b3e5fc 100%);
+            color: #01579b;
+        }
+        
+        .btn-view:hover {
+            background: linear-gradient(135deg, #b3e5fc 0%, #81d4fa 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(3, 169, 244, 0.3);
+        }
+        
+        /* Modern Filter Card */
+        .filter-card {
+            background: linear-gradient(135deg, #f8f9ff 0%, #f0f4ff 100%);
+            border: 1px solid #e3f2fd;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        .form-control-modern, .form-select.form-control-modern {
+            border: 1px solid #e1e5e9;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .form-control-modern:focus, .form-select.form-control-modern:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            transform: translateY(-1px);
+        }
+        
+        .btn-modern {
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-modern:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -126,6 +515,27 @@
                         <span class="nav-text">Siswa</span>
                     </a>
                     
+                    <!-- Dropdown Menu Pelanggaran -->
+                    <div class="nav-dropdown" onmouseenter="showDropdown('violationDropdown')" onmouseleave="hideDropdown('violationDropdown')">
+                        <a href="#" class="nav-link-sidebar nav-dropdown-toggle {{ request()->routeIs('admin.violation-types.*') || request()->routeIs('admin.student-violations.*') ? 'active' : '' }}">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span class="nav-text">Pelanggaran</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <div class="nav-dropdown-menu" id="violationDropdown">
+                            <a href="{{ route('admin.violation-types.index') }}" 
+                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.violation-types.*') ? 'active' : '' }}">
+                                <i class="fas fa-list-alt"></i>
+                                <span class="nav-text">Jenis Pelanggaran</span>
+                            </a>
+                            <a href="{{ route('admin.student-violations.index') }}" 
+                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.student-violations.*') ? 'active' : '' }}">
+                                <i class="fas fa-clipboard-list"></i>
+                                <span class="nav-text">Data Pelanggaran</span>
+                            </a>
+                        </div>
+                    </div>
+                    
                     <a href="{{ route('admin.users.index') }}" 
                        class="nav-link-sidebar {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -134,13 +544,25 @@
                         <span class="nav-text">User</span>
                     </a>
                     
-                    <a href="{{ route('admin.reports.index') }}" 
-                       class="nav-link-sidebar {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                        </svg>
-                        <span class="nav-text">Laporan</span>
-                    </a>
+                    <!-- Dropdown Menu Laporan -->
+                    <div class="nav-dropdown" onmouseenter="showDropdown('reportDropdown')" onmouseleave="hideDropdown('reportDropdown')">
+                        <a href="#" class="nav-link-sidebar nav-dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+                            <i class="fas fa-chart-bar"></i>
+                            <span class="nav-text">Laporan</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <div class="nav-dropdown-menu" id="reportDropdown">
+                            <a href="{{ route('admin.reports.index') }}" 
+                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.reports.index') ? 'active' : '' }}">
+                                <i class="fas fa-file-alt"></i>
+                                <span class="nav-text">Laporan Absensi</span>
+                            </a>
+                            <a href="#" class="nav-link-sidebar nav-sub">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span class="nav-text">Laporan Pelanggaran</span>
+                            </a>
+                        </div>
+                    </div>
                     
                     <a href="{{ route('admin.holidays.index') }}" 
                        class="nav-link-sidebar {{ request()->routeIs('admin.holidays.*') ? 'active' : '' }}">
@@ -329,6 +751,21 @@
                 mainContent.classList.toggle('expanded');
             });
         });
+
+        // Hover dropdown functions
+        function showDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            if (dropdown) {
+                dropdown.classList.add('show');
+            }
+        }
+
+        function hideDropdown(dropdownId) {
+            const dropdown = document.getElementById(dropdownId);
+            if (dropdown) {
+                dropdown.classList.remove('show');
+            }
+        }
 
         // SweetAlert Delete Confirmation
         document.addEventListener('click', function(e) {

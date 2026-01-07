@@ -29,14 +29,14 @@
                     @endif
 
                     <!-- Filter Form -->
-                    <div class="card mb-3">
+                    <div class="card filter-card mb-4">
                         <div class="card-body">
                             <form method="GET" action="{{ route('admin.student-violations.index') }}">
                                 <div class="row g-3">
                                     <div class="col-md-3">
                                         <label for="start_date" class="form-label">Tanggal Mulai</label>
                                         <input type="date" 
-                                               class="form-control" 
+                                               class="form-control form-control-modern" 
                                                id="start_date" 
                                                name="start_date" 
                                                value="{{ request('start_date') }}">
@@ -44,14 +44,14 @@
                                     <div class="col-md-3">
                                         <label for="end_date" class="form-label">Tanggal Akhir</label>
                                         <input type="date" 
-                                               class="form-control" 
+                                               class="form-control form-control-modern" 
                                                id="end_date" 
                                                name="end_date" 
                                                value="{{ request('end_date') }}">
                                     </div>
                                     <div class="col-md-3">
                                         <label for="student_id" class="form-label">Siswa</label>
-                                        <select class="form-select" id="student_id" name="student_id">
+                                        <select class="form-select form-control-modern" id="student_id" name="student_id">
                                             <option value="">Semua Siswa</option>
                                             @foreach($students as $student)
                                                 <option value="{{ $student->id }}" 
@@ -63,7 +63,7 @@
                                     </div>
                                     <div class="col-md-3">
                                         <label for="violation_type_id" class="form-label">Jenis Pelanggaran</label>
-                                        <select class="form-select" id="violation_type_id" name="violation_type_id">
+                                        <select class="form-select form-control-modern" id="violation_type_id" name="violation_type_id">
                                             <option value="">Semua Jenis</option>
                                             @foreach($violationTypes->groupBy('category') as $category => $types)
                                                 <optgroup label="{{ ucfirst($category) }}">
@@ -81,7 +81,7 @@
                                 <div class="row g-3 mt-2">
                                     <div class="col-md-3">
                                         <label for="status" class="form-label">Status</label>
-                                        <select class="form-select" id="status" name="status">
+                                        <select class="form-select form-control-modern" id="status" name="status">
                                             <option value="">Semua Status</option>
                                             <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>
                                                 Pending
@@ -95,10 +95,10 @@
                                         </select>
                                     </div>
                                     <div class="col-md-9 d-flex align-items-end">
-                                        <button type="submit" class="btn btn-primary me-2">
+                                        <button type="submit" class="btn btn-primary btn-modern me-2">
                                             <i class="fas fa-search"></i> Filter
                                         </button>
-                                        <a href="{{ route('admin.student-violations.index') }}" class="btn btn-secondary">
+                                        <a href="{{ route('admin.student-violations.index') }}" class="btn btn-secondary btn-modern">
                                             <i class="fas fa-refresh"></i> Reset
                                         </a>
                                     </div>
@@ -108,8 +108,8 @@
                     </div>
 
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-dark">
+                        <table class="table table-modern">
+                            <thead>
                                 <tr>
                                     <th>No</th>
                                     <th>Tanggal/Waktu</th>
@@ -123,56 +123,63 @@
                             </thead>
                             <tbody>
                                 @forelse($violations as $index => $violation)
-                                    <tr>
-                                        <td>{{ $violations->firstItem() + $index }}</td>
+                                    <tr class="table-row-hover">
                                         <td>
-                                            <div>
-                                                <strong>{{ $violation->violation_date->format('d/m/Y') }}</strong>
+                                            <div class="table-number">
+                                                {{ $violations->firstItem() + $index }}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="date-info">
+                                                <div class="date-main">{{ $violation->violation_date->format('d/m/Y') }}</div>
                                                 @if($violation->violation_time)
-                                                    <br><small class="text-muted">{{ $violation->violation_time->format('H:i') }}</small>
+                                                    <div class="date-sub">{{ $violation->violation_time->format('H:i') }}</div>
                                                 @endif
                                             </div>
                                         </td>
                                         <td>
-                                            <div>
-                                                <strong>{{ $violation->student->name }}</strong>
-                                                <br><small class="text-muted">{{ $violation->student->nisn }}</small>
-                                                <br><small class="text-muted">Kelas {{ $violation->student->kelas }}</small>
+                                            <div class="student-info">
+                                                <div class="student-name">{{ $violation->student->name }}</div>
+                                                <div class="student-details">
+                                                    <span class="student-nisn">{{ $violation->student->nisn }}</span>
+                                                    <span class="student-class">Kelas {{ $violation->student->kelas }}</span>
+                                                </div>
                                             </div>
                                         </td>
                                         <td>
-                                            <div>
-                                                <strong>{{ $violation->violationType->name }}</strong>
-                                                <br>
-                                                <span class="badge bg-{{ $violation->violationType->badge_color }}">
-                                                    {{ ucfirst($violation->violationType->category) }}
-                                                </span>
-                                                <span class="badge bg-info">{{ $violation->violationType->points }} poin</span>
+                                            <div class="violation-info">
+                                                <div class="violation-name">{{ $violation->violationType->name }}</div>
+                                                <div class="violation-badges">
+                                                    <span class="badge badge-{{ $violation->violationType->badge_color }}">
+                                                        {{ ucfirst($violation->violationType->category) }}
+                                                    </span>
+                                                    <span class="badge badge-points">{{ $violation->violationType->points }} poin</span>
+                                                </div>
                                             </div>
                                         </td>
                                         <td>
-                                            <small class="text-muted">
+                                            <div class="location-text">
                                                 {{ $violation->location ?: '-' }}
-                                            </small>
+                                            </div>
                                         </td>
                                         <td>
-                                            <small class="text-muted">
+                                            <div class="reporter-text">
                                                 {{ $violation->reported_by ?: '-' }}
-                                            </small>
+                                            </div>
                                         </td>
                                         <td>
-                                            <span class="badge bg-{{ $violation->status_badge_color }}">
+                                            <span class="badge badge-status badge-status-{{ $violation->status_badge_color }}">
                                                 {{ ucfirst($violation->status) }}
                                             </span>
                                         </td>
                                         <td>
-                                            <div class="btn-group" role="group">
+                                            <div class="action-buttons">
                                                 <a href="{{ route('admin.student-violations.show', $violation) }}" 
-                                                   class="btn btn-sm btn-info" title="Detail">
+                                                   class="btn btn-sm btn-action btn-view" title="Detail">
                                                     <i class="fas fa-eye"></i>
                                                 </a>
                                                 <a href="{{ route('admin.student-violations.edit', $violation) }}" 
-                                                   class="btn btn-sm btn-warning" title="Edit">
+                                                   class="btn btn-sm btn-action btn-edit" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 <form action="{{ route('admin.student-violations.destroy', $violation) }}" 
@@ -180,7 +187,7 @@
                                                       onsubmit="return confirm('Yakin ingin menghapus data pelanggaran ini?')">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger" title="Hapus">
+                                                    <button type="submit" class="btn btn-sm btn-action btn-delete" title="Hapus">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
@@ -190,7 +197,7 @@
                                 @empty
                                     <tr>
                                         <td colspan="8" class="text-center">
-                                            <div class="py-4">
+                                            <div class="empty-state">
                                                 <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
                                                 <p class="text-muted">Belum ada data pelanggaran siswa.</p>
                                                 <a href="{{ route('admin.student-violations.create') }}" class="btn btn-primary">

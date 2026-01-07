@@ -29,8 +29,8 @@
                     @endif
 
                     <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead class="table-dark">
+                        <table class="table table-modern">
+                            <thead>
                                 <tr>
                                     <th>No</th>
                                     <th>Nama Pelanggaran</th>
@@ -43,18 +43,24 @@
                             </thead>
                             <tbody>
                                 @forelse($violationTypes as $index => $violationType)
-                                    <tr>
-                                        <td>{{ $violationTypes->firstItem() + $index }}</td>
+                                    <tr class="table-row-hover">
                                         <td>
-                                            <strong>{{ $violationType->name }}</strong>
+                                            <div class="table-number">
+                                                {{ $violationTypes->firstItem() + $index }}
+                                            </div>
                                         </td>
                                         <td>
-                                            <span class="badge bg-{{ $violationType->badge_color }}">
+                                            <div class="violation-name">
+                                                <strong>{{ $violationType->name }}</strong>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge badge-{{ $violationType->badge_color }}">
                                                 {{ ucfirst($violationType->category) }}
                                             </span>
                                         </td>
                                         <td>
-                                            <span class="badge bg-info">{{ $violationType->points }} poin</span>
+                                            <span class="badge badge-points">{{ $violationType->points }} poin</span>
                                         </td>
                                         <td>
                                             <form action="{{ route('admin.violation-types.toggle-status', $violationType) }}" 
@@ -62,20 +68,20 @@
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="submit" 
-                                                        class="btn btn-sm btn-{{ $violationType->status === 'active' ? 'success' : 'secondary' }}">
+                                                        class="btn btn-sm btn-toggle {{ $violationType->status === 'active' ? 'btn-toggle-active' : 'btn-toggle-inactive' }}">
                                                     {{ $violationType->status === 'active' ? 'Aktif' : 'Nonaktif' }}
                                                 </button>
                                             </form>
                                         </td>
                                         <td>
-                                            <small class="text-muted">
+                                            <div class="description-text">
                                                 {{ Str::limit($violationType->description, 50) }}
-                                            </small>
+                                            </div>
                                         </td>
                                         <td>
-                                            <div class="btn-group" role="group">
+                                            <div class="action-buttons">
                                                 <a href="{{ route('admin.violation-types.edit', $violationType) }}" 
-                                                   class="btn btn-sm btn-warning">
+                                                   class="btn btn-sm btn-action btn-edit" title="Edit">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
                                                 <form action="{{ route('admin.violation-types.destroy', $violationType) }}" 
@@ -83,7 +89,7 @@
                                                       onsubmit="return confirm('Yakin ingin menghapus jenis pelanggaran ini?')">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-danger">
+                                                    <button type="submit" class="btn btn-sm btn-action btn-delete" title="Hapus">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </form>
@@ -93,7 +99,7 @@
                                 @empty
                                     <tr>
                                         <td colspan="7" class="text-center">
-                                            <div class="py-4">
+                                            <div class="empty-state">
                                                 <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
                                                 <p class="text-muted">Belum ada jenis pelanggaran yang ditambahkan.</p>
                                                 <a href="{{ route('admin.violation-types.create') }}" class="btn btn-primary">
