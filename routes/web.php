@@ -92,10 +92,23 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::get('/reports/export', [\App\Http\Controllers\Admin\ReportController::class, 'export'])->name('reports.export');
         
         // Student management (admin only)
+        Route::delete('students/delete-all', [StudentController::class, 'deleteAll'])->name('students.delete-all');
+        Route::post('students/bulk-delete', [StudentController::class, 'bulkDelete'])->name('students.bulk-delete');
+        Route::post('students/bulk-update-status', [StudentController::class, 'bulkUpdateStatus'])->name('students.bulk-update-status');
         Route::resource('students', StudentController::class);
+        Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
+        Route::get('students/template/download', [StudentController::class, 'downloadTemplate'])->name('students.template');
         
         // User management (admin only)
         Route::resource('users', UserController::class)->middleware('protect.admin');
+        
+        // Violation Types management (admin only)
+        Route::resource('violation-types', \App\Http\Controllers\Admin\ViolationTypeController::class);
+        Route::patch('violation-types/{violationType}/toggle-status', [\App\Http\Controllers\Admin\ViolationTypeController::class, 'toggleStatus'])->name('violation-types.toggle-status');
+        
+        // Student Violations management (admin only)
+        Route::resource('student-violations', \App\Http\Controllers\Admin\StudentViolationController::class);
+        Route::get('students/{student}/violations', [\App\Http\Controllers\Admin\StudentViolationController::class, 'getStudentViolations'])->name('students.violations');
     });
 });
 

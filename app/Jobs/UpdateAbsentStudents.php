@@ -41,6 +41,7 @@ class UpdateAbsentStudents implements ShouldQueue
         $activeStudents = \App\Models\Student::where('status', 'active')->get();
         
         $absentCount = 0;
+        $bolosCount = 0;
         
         foreach ($activeStudents as $student) {
             // Check if student has attendance record for today
@@ -72,11 +73,11 @@ class UpdateAbsentStudents implements ShouldQueue
                     'status' => 'bolos',
                     'notes' => 'Otomatis ditandai bolos - clock in tanpa clock out sampai waktu auto absent'
                 ]);
-                $absentCount++; // Count bolos as part of problematic attendance
+                $bolosCount++;
                 \Illuminate\Support\Facades\Log::info("Student {$student->nisn} marked as bolos (clock in without clock out) on {$today}");
             }
         }
         
-        \Illuminate\Support\Facades\Log::info("UpdateAbsentStudents job completed. {$absentCount} students processed (absent/bolos) for {$today}");
+        \Illuminate\Support\Facades\Log::info("UpdateAbsentStudents job completed. {$absentCount} students marked as absent, {$bolosCount} students marked as bolos for {$today}");
     }
 }

@@ -267,8 +267,11 @@
                                 title: 'Berhasil!',
                                 text: '{{ session('success') }}',
                                 icon: 'success',
-                                confirmButtonColor: '#198754',
-                                confirmButtonText: 'OK'
+                                timer: 3000,
+                                timerProgressBar: true,
+                                showConfirmButton: false,
+                                toast: true,
+                                position: 'top-end'
                             });
                         });
                     </script>
@@ -281,8 +284,11 @@
                                 title: 'Error!',
                                 text: '{{ session('error') }}',
                                 icon: 'error',
-                                confirmButtonColor: '#dc3545',
-                                confirmButtonText: 'OK'
+                                timer: 3000,
+                                timerProgressBar: true,
+                                showConfirmButton: false,
+                                toast: true,
+                                position: 'top-end'
                             });
                         });
                     </script>

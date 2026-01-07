@@ -5,7 +5,12 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Classes;
 use App\Models\Student;
+use App\Imports\StudentsImport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
 
 class StudentController extends Controller
 {
@@ -13,7 +18,7 @@ class StudentController extends Controller
     {
         $query = Student::query()
             ->select('students.*')
-            ->leftJoin('classes', 'students.class_id', '=', 'classes.id');
+            ->with(['class:id,name']); // Eager loading dengan select spesifik
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -27,7 +32,10 @@ class StudentController extends Controller
             $query->where('students.class_id', $request->class_id);
         }
 
-        $students = $query->orderBy('students.name', 'asc')->with(['class'])->get();
+        // Gunakan pagination untuk mengurangi beban
+        $students = $query->orderBy('students.name', 'asc')
+            ->paginate(50); // Batasi 50 data per halaman
+        
         $classes = Classes::select('id', 'name')->get();
 
         // Handle AJAX request for reports filter
@@ -178,6 +186,183 @@ class StudentController extends Controller
         } catch (\Exception $e) {
             return redirect()->route('admin.students.index')
                 ->with('error', 'Gagal menghapus siswa. ' . $e->getMessage());
+        }
+    }
+
+    public function import(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls,csv|max:2048'
+        ]);
+
+        try {
+            // Set longer execution time for import
+            set_time_limit(300); // 5 minutes
+            ini_set('memory_limit', '256M');
+            
+            Excel::import(new StudentsImport, $request->file('file'));
+            
+            return redirect()->route('admin.students.index')
+                ->with('success', 'Data siswa berhasil diimport!');
+                
+        } catch (\Maatwebsite\Excel\Validators\ValidationException $e) {
+            $failures = $e->failures();
+            $errorMessages = [];
+            
+            foreach ($failures as $failure) {
+                $errorMessages[] = "Baris {$failure->row()}: " . implode(', ', $failure->errors());
+            }
+            
+            return redirect()->route('admin.students.index')
+                ->with('error', 'Import gagal: ' . implode(' | ', array_slice($errorMessages, 0, 5))); // Limit error messages
+                
+        } catch (\Exception $e) {
+            Log::error('Import error: ' . $e->getMessage());
+            return redirect()->route('admin.students.index')
+                ->with('error', 'Import gagal: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteAll(Request $request)
+    {
+        // Validasi konfirmasi
+        $request->validate([
+            'confirmation' => 'required|in:HAPUS SEMUA DATA'
+        ], [
+            'confirmation.required' => 'Konfirmasi wajib diisi',
+            'confirmation.in' => 'Konfirmasi harus berupa teks "HAPUS SEMUA DATA"'
+        ]);
+
+        try {
+            // Hitung jumlah data yang akan dihapus
+            $totalStudents = Student::count();
+            
+            if ($totalStudents == 0) {
+                return redirect()->route('admin.students.index')
+                    ->with('info', 'Tidak ada data siswa untuk dihapus');
+            }
+
+            // Gunakan database transaction untuk keamanan
+            DB::beginTransaction();
+            
+            // Hapus semua data absensi terlebih dahulu
+            if (Schema::hasTable('attendances')) {
+                DB::table('attendances')->delete();
+            }
+            
+            // Hapus semua data siswa
+            DB::table('students')->delete();
+            
+            DB::commit();
+            
+            return redirect()->route('admin.students.index')
+                ->with('success', "Berhasil menghapus {$totalStudents} data siswa dan data terkait");
+                
+        } catch (\Exception $e) {
+            DB::rollback();
+            Log::error('Delete all students error: ' . $e->getMessage());
+            return redirect()->route('admin.students.index')
+                ->with('error', 'Gagal menghapus data siswa: ' . $e->getMessage());
+        }
+    }
+
+    public function downloadTemplate()
+    {
+        try {
+            // Get available classes for better template
+            $classes = Classes::select('name')->get()->pluck('name')->toArray();
+            
+            $headers = [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => 'attachment; filename="template_import_siswa.csv"',
+                'Cache-Control' => 'no-cache, no-store, must-revalidate',
+                'Pragma' => 'no-cache',
+                'Expires' => '0'
+            ];
+
+            // Create sample data for template with real class names
+            $sampleData = [
+                ['nama', 'nisn', 'kelas', 'tempat_lahir', 'tanggal_lahir', 'no_handphone', 'alamat'],
+                ['Ahmad Rizki', '1234567890', '10', 'Jakarta', '15/03/2005', '081234567890', 'Jl. Merdeka No. 123'],
+                ['Siti Nurhaliza', '0987654321', '11', 'Bandung', '22/07/2004', '081987654321', 'Jl. Sudirman No. 456'],
+                ['Budi Santoso', '1122334455', '12', 'Surabaya', '10/12/2003', '082112233445', 'Jl. Diponegoro No. 789']
+            ];
+
+            return response()->streamDownload(function() use ($sampleData) {
+                $file = fopen('php://output', 'w');
+                
+                // Add BOM for UTF-8 CSV to handle Indonesian characters properly
+                fwrite($file, "\xEF\xBB\xBF");
+                
+                foreach ($sampleData as $row) {
+                    fputcsv($file, $row);
+                }
+                
+                fclose($file);
+            }, 'template_import_siswa.csv', $headers);
+            
+        } catch (\Exception $e) {
+            return redirect()->route('admin.students.index')
+                ->with('error', 'Gagal mendownload template: ' . $e->getMessage());
+        }
+    }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'student_ids' => 'required|array|min:1',
+            'student_ids.*' => 'exists:students,id'
+        ]);
+
+        try {
+            $studentIds = $request->student_ids;
+            $deletedCount = 0;
+
+            DB::beginTransaction();
+
+            // Delete related attendances first
+            if (Schema::hasTable('attendances')) {
+                DB::table('attendances')->whereIn('student_id', $studentIds)->delete();
+            }
+
+            // Delete students
+            $deletedCount = Student::whereIn('id', $studentIds)->delete();
+
+            DB::commit();
+
+            return redirect()->route('admin.students.index')
+                ->with('success', "Berhasil menghapus {$deletedCount} siswa");
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return redirect()->route('admin.students.index')
+                ->with('error', 'Gagal menghapus siswa: ' . $e->getMessage());
+        }
+    }
+
+    public function bulkUpdateStatus(Request $request)
+    {
+        $request->validate([
+            'student_ids' => 'required|array|min:1',
+            'student_ids.*' => 'exists:students,id',
+            'status' => 'required|in:active,inactive'
+        ]);
+
+        try {
+            $studentIds = $request->student_ids;
+            $status = $request->status;
+
+            $updatedCount = Student::whereIn('id', $studentIds)
+                ->update(['status' => $status]);
+
+            $statusText = $status === 'active' ? 'aktif' : 'tidak aktif';
+
+            return redirect()->route('admin.students.index')
+                ->with('success', "Berhasil mengubah status {$updatedCount} siswa menjadi {$statusText}");
+
+        } catch (\Exception $e) {
+            return redirect()->route('admin.students.index')
+                ->with('error', 'Gagal mengubah status siswa: ' . $e->getMessage());
         }
     }
 }

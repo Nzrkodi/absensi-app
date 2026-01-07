@@ -35,4 +35,33 @@ class Student extends Model
     {
         return $this->hasMany(Attendance::class);
     }
+
+    /**
+     * Relasi ke student violations
+     */
+    public function violations(): HasMany
+    {
+        return $this->hasMany(StudentViolation::class);
+    }
+
+    /**
+     * Get total violation points for student
+     */
+    public function getTotalViolationPointsAttribute()
+    {
+        return $this->violations()
+            ->join('violation_types', 'student_violations.violation_type_id', '=', 'violation_types.id')
+            ->sum('violation_types.points');
+    }
+
+    /**
+     * Get violations count by category
+     */
+    public function getViolationsByCategory($category)
+    {
+        return $this->violations()
+            ->join('violation_types', 'student_violations.violation_type_id', '=', 'violation_types.id')
+            ->where('violation_types.category', $category)
+            ->count();
+    }
 }

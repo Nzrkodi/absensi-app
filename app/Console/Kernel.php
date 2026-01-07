@@ -4,6 +4,7 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use Illuminate\Support\Facades\Log;
 
 class Kernel extends ConsoleKernel
 {
@@ -12,17 +13,19 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Update absent students based on setting time
-        $autoAbsentTime = \App\Models\Setting::get('auto_absent_time', '15:00');
-        $schedule->command('attendance:update-absent')
-                 ->dailyAt($autoAbsentTime)
-                 ->timezone('Asia/Makassar')
-                 ->onSuccess(function () {
-                     \Log::info('Auto absent job completed successfully at ' . now('Asia/Makassar'));
-                 })
-                 ->onFailure(function () {
-                     \Log::error('Auto absent job failed at ' . now('Asia/Makassar'));
-                 });
+        // Check every minute if it's time to run auto absent
+        $schedule->call(function () {
+            $autoAbsentTime = \App\Models\Setting::get('auto_absent_time', '15:00');
+            $currentTime = now('Asia/Makassar')->format('H:i');
+            
+            if ($currentTime === $autoAbsentTime) {
+                Log::info("Auto absent time reached ({$autoAbsentTime}), dispatching job...");
+                \App\Jobs\UpdateAbsentStudents::dispatch();
+            }
+        })
+        ->everyMinute()
+        ->timezone('Asia/Makassar')
+        ->name('auto-absent-checker');
         
         // Auto-sync holidays monthly (first day of each month at 2 AM)
         $schedule->command('holidays:sync --all')
