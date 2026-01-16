@@ -130,7 +130,7 @@
                             </ul>
                         </div>
 
-                        <div class="alert alert-info small">
+                        <div class="alert alert-info alert-permanent small">
                             <i class="fas fa-lightbulb me-1"></i>
                             <strong>Tips:</strong> Sesuaikan waktu dengan jadwal sekolah Anda. Sistem akan otomatis menandai
                             siswa terlambat atau absent berdasarkan pengaturan ini.
@@ -175,7 +175,7 @@
                 </div>
                 <div class="modal-body">
                     <p class="mb-3">Apakah Anda yakin ingin mereset semua pengaturan ke nilai default?</p>
-                    <div class="alert alert-warning mb-0">
+                    <div class="alert alert-warning alert-permanent mb-0">
                         <small>
                             <i class="fas fa-info-circle me-1"></i>
                             <strong>Nilai default:</strong>

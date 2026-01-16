@@ -62,8 +62,8 @@ class StudentController extends Controller
             'birth_place' => 'required|string|max:255',
             'birth_date' => 'required|date',
             'phone' => 'required|string|max:20',
-            'address' => 'required|string',
-            'status' => 'required|in:active,inactive',
+            'address' => 'nullable|string',
+            'status' => 'nullable|in:active,inactive',
         ]);
 
         try {
@@ -75,13 +75,12 @@ class StudentController extends Controller
                 'birth_place' => $request->birth_place,
                 'birth_date' => $request->birth_date,
                 'phone' => $request->phone,
-                'address' => $request->address,
-                'status' => $request->status,
+                'address' => $request->address ?? "",
+                'status' => 'active',
             ]);
 
             return redirect()->route('admin.students.index')
                 ->with('success', 'Siswa berhasil ditambahkan');
-                
         } catch (\Exception $e) {
             return redirect()->route('admin.students.index')
                 ->with('error', 'Gagal menambahkan siswa. ' . $e->getMessage());
@@ -92,14 +91,14 @@ class StudentController extends Controller
     {
         try {
             $student = Student::with(['class'])->find($id);
-            
+
             if (!$student) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Siswa tidak ditemukan atau sudah dihapus'
                 ], 404);
             }
-            
+
             return response()->json([
                 'success' => true,
                 'data' => [
@@ -131,18 +130,18 @@ class StudentController extends Controller
             'birth_place' => 'required|string|max:255',
             'birth_date' => 'required|date',
             'phone' => 'required|string|max:20',
-            'address' => 'required|string',
-            'status' => 'required|in:active,inactive',
+            'address' => 'nullable|string',
+            'status' => 'nullable|in:active,inactive',
         ]);
 
         try {
             $student = Student::find($id);
-            
+
             if (!$student) {
                 return redirect()->route('admin.students.index')
                     ->with('error', 'Siswa tidak ditemukan atau sudah dihapus');
             }
-            
+
             // Update student data directly
             $student->update([
                 'name' => $request->name,
@@ -157,7 +156,6 @@ class StudentController extends Controller
 
             return redirect()->route('admin.students.index')
                 ->with('success', 'Siswa berhasil diupdate');
-                
         } catch (\Exception $e) {
             return redirect()->route('admin.students.index')
                 ->with('error', 'Gagal mengupdate siswa. ' . $e->getMessage());
@@ -168,21 +166,20 @@ class StudentController extends Controller
     {
         try {
             $student = Student::find($id);
-            
+
             if (!$student) {
                 return redirect()->route('admin.students.index')
                     ->with('error', 'Siswa tidak ditemukan atau sudah dihapus sebelumnya');
             }
-            
+
             // Delete related attendances first (if any)
             $student->attendances()->delete();
-            
+
             // Delete the student record
             $student->delete();
-            
+
             return redirect()->route('admin.students.index')
                 ->with('success', 'Siswa berhasil dihapus');
-                
         } catch (\Exception $e) {
             return redirect()->route('admin.students.index')
                 ->with('error', 'Gagal menghapus siswa. ' . $e->getMessage());

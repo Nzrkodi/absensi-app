@@ -86,10 +86,10 @@
                         <td>
                             <a href="{{ route('admin.users.edit', $user) }}" class="btn btn-sm btn-outline-primary">Edit</a>
                             @if($user->id !== auth()->id() && $user->email !== 'aditya.wahyu@smaitpersis.sch.id')
-                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline" onsubmit="return confirm('Yakin hapus user ini?')">
+                            <form action="{{ route('admin.users.destroy', $user) }}" method="POST" class="d-inline delete-form">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Hapus</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger btn-delete">Hapus</button>
                             </form>
                             @elseif($user->email === 'aditya.wahyu@smaitpersis.sch.id')
                                 <span class="badge bg-secondary">

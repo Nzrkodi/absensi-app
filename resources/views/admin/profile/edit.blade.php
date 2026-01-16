@@ -159,7 +159,7 @@
                 </div>
             </div>
             
-            <div class="alert alert-info mt-3">
+            <div class="alert alert-info mt-3 alert-permanent">
                 <i class="fas fa-info-circle me-2"></i>
                 <strong>Info:</strong> Perubahan akan terlihat setelah profil disimpan.
             </div>
@@ -177,7 +177,7 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <div class="alert alert-warning">
+                    <div class="alert alert-warning alert-permanent">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         <strong>Opsional:</strong> Isi bagian ini hanya jika ingin mengubah password.
                     </div>

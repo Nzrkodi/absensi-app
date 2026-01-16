@@ -41,7 +41,8 @@ class StudentSeeder extends Seeder
             ]);
 
             Student::create([
-                'user_id' => $user->id,
+                // 'user_id' => $user->id,
+                'name' => $data['name'],
                 'nisn' => $data['nisn'],
                 'class_id' => $class?->id,
             ]);
