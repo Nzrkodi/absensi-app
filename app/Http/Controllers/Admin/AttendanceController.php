@@ -73,12 +73,31 @@ class AttendanceController extends Controller
         $date = Carbon::today('Asia/Makassar');
         $now = Carbon::now('Asia/Makassar');
         
-        // Validate request for manual time
-        $request->validate([
-            'clock_mode' => 'required|in:current,manual',
-            'manual_time' => 'required_if:clock_mode,manual|date_format:H:i',
-            'notes' => 'nullable|string|max:500'
+        // Debug log
+        Log::info('Clock In Request', [
+            'student_id' => $student->id,
+            'request_data' => $request->all(),
+            'headers' => $request->headers->all()
         ]);
+        
+        // Validate request for manual time
+        try {
+            $request->validate([
+                'clock_mode' => 'required|in:current,manual',
+                'manual_time' => 'required_if:clock_mode,manual|nullable|date_format:H:i',
+                'notes' => 'nullable|string|max:500'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Validation Error', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak valid: ' . implode(', ', array_flatten($e->errors()))
+            ]);
+        }
         
         // Check if attendance already exists for today
         $attendance = Attendance::where('student_id', $student->id)
@@ -293,6 +312,124 @@ class AttendanceController extends Controller
                 'can_clock_in' => $attendance->canClockIn(),
                 'can_clock_out' => $attendance->canClockOut()
             ] : null
+        ]);
+    }
+
+    public function bulkPermission(Request $request, Student $student)
+    {
+        $request->validate([
+            'start_date' => 'required|date|date_format:Y-m-d',
+            'end_date' => 'required|date|date_format:Y-m-d|after_or_equal:start_date',
+            'permission_type' => 'required|in:sick,permission',
+            'notes' => 'required|string|max:500'
+        ]);
+
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = Carbon::parse($request->end_date);
+        $permissionType = $request->permission_type;
+        $notes = $request->notes;
+
+        // Check if date range is not too long (max 30 days)
+        if ($startDate->diffInDays($endDate) > 30) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Periode izin tidak boleh lebih dari 30 hari'
+            ]);
+        }
+
+        // Check if start date is not too far in the past (max 7 days ago)
+        $today = Carbon::today('Asia/Makassar');
+        if ($startDate->lt($today->copy()->subDays(7))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tanggal mulai tidak boleh lebih dari 7 hari yang lalu'
+            ]);
+        }
+
+        $createdDates = [];
+        $updatedDates = [];
+        $skippedDates = [];
+
+        // Loop through each date in the range
+        $currentDate = $startDate->copy();
+        while ($currentDate->lte($endDate)) {
+            $dateStr = $currentDate->format('Y-m-d');
+            
+            // Skip if it's a holiday
+            if (\App\Models\Holiday::isHoliday($currentDate)) {
+                $skippedDates[] = $dateStr . ' (hari libur)';
+                $currentDate->addDay();
+                continue;
+            }
+
+            // Check existing attendance
+            $attendance = Attendance::where('student_id', $student->id)
+                ->where('date', $dateStr)
+                ->first();
+
+            if (!$attendance) {
+                // Create new attendance record
+                Attendance::create([
+                    'student_id' => $student->id,
+                    'date' => $dateStr,
+                    'status' => $permissionType,
+                    'notes' => $notes
+                ]);
+                $createdDates[] = $dateStr;
+            } else {
+                // Update existing record only if it's not already clock in/out
+                if (!$attendance->clock_in && !$attendance->clock_out) {
+                    $attendance->update([
+                        'status' => $permissionType,
+                        'notes' => $notes
+                    ]);
+                    $updatedDates[] = $dateStr;
+                } else {
+                    $skippedDates[] = $dateStr . ' (sudah ada clock in/out)';
+                }
+            }
+
+            $currentDate->addDay();
+        }
+
+        // Log the bulk permission action
+        Log::info('Bulk Permission Applied', [
+            'student_id' => $student->id,
+            'student_name' => $student->name,
+            'start_date' => $request->start_date,
+            'end_date' => $request->end_date,
+            'permission_type' => $permissionType,
+            'notes' => $notes,
+            'created_dates' => $createdDates,
+            'updated_dates' => $updatedDates,
+            'skipped_dates' => $skippedDates,
+            'admin_user' => auth()->user()->name ?? 'Unknown'
+        ]);
+
+        $totalProcessed = count($createdDates) + count($updatedDates);
+        $message = "Berhasil memproses {$totalProcessed} hari";
+        
+        if (count($createdDates) > 0) {
+            $message .= " (dibuat: " . count($createdDates) . ")";
+        }
+        
+        if (count($updatedDates) > 0) {
+            $message .= " (diupdate: " . count($updatedDates) . ")";
+        }
+        
+        if (count($skippedDates) > 0) {
+            $message .= " (dilewati: " . count($skippedDates) . ")";
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => $message,
+            'data' => [
+                'created_dates' => $createdDates,
+                'updated_dates' => $updatedDates,
+                'skipped_dates' => $skippedDates,
+                'total_processed' => $totalProcessed
+            ]
         ]);
     }
 }

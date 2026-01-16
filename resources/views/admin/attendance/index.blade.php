@@ -80,10 +80,9 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-3">
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-secondary flex-grow-1">Cari</button>
-                        <a href="{{ route('admin.attendance.index', ['date' => $date]) }}" class="btn btn-outline-secondary flex-grow-1">Reset</a>
-                    </div>
+                    <a href="{{ route('admin.attendance.index', ['date' => $date]) }}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-undo me-1"></i> Reset Filter
+                    </a>
                 </div>
             </div>
         </form>
@@ -374,16 +373,65 @@
                             <option value="permission">Izin</option>
                         </select>
                     </div>
+                    
+                    <!-- Multi-day options (hidden by default) -->
+                    <div id="multiDayOptions" class="d-none mb-3">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Opsi Durasi Izin:</strong> Pilih apakah izin/sakit hanya untuk hari ini atau untuk beberapa hari.
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="duration_type" id="singleDay" value="single" checked>
+                                <label class="form-check-label" for="singleDay">
+                                    <strong>Hari ini saja</strong>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="duration_type" id="multiDay" value="multi">
+                                <label class="form-check-label" for="multiDay">
+                                    <strong>Beberapa hari</strong> (termasuk hari ini)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <!-- Date range for multi-day (hidden by default) -->
+                        <div id="dateRangeSection" class="d-none">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="noteStartDate" class="form-label">Tanggal Mulai <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" id="noteStartDate" name="start_date">
+                                        <small class="text-muted">Bisa diubah sesuai kebutuhan</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="noteEndDate" class="form-label">Tanggal Akhir <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control" id="noteEndDate" name="end_date">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="noteDateRangeInfo" class="alert alert-secondary d-none">
+                                <i class="fas fa-calendar me-2"></i>
+                                <span id="noteDateRangeText"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
                         <label for="notes" class="form-label">Keterangan <span class="text-danger">*</span></label>
                         <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Masukkan keterangan..." required></textarea>
+                        <div class="form-text">Contoh: Demam tinggi, Keperluan keluarga, dll.</div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">
                         <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
-                        Simpan
+                        <span id="submitButtonText">Simpan</span>
                     </button>
                 </div>
             </form>
@@ -500,6 +548,36 @@ document.addEventListener('DOMContentLoaded', function() {
         url.searchParams.set('date', date);
         window.location.href = url.toString();
     });
+    
+    // Auto-submit form when class filter changes
+    const classFilter = document.querySelector('select[name="class_id"]');
+    if (classFilter) {
+        classFilter.addEventListener('change', function() {
+            // Get the filter form and submit it
+            const filterForm = document.getElementById('filterForm');
+            if (filterForm) {
+                filterForm.submit();
+            }
+        });
+    }
+    
+    // Auto-submit form when search input changes (with debounce)
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
+            
+            // Set new timeout for 500ms delay
+            searchTimeout = setTimeout(() => {
+                const filterForm = document.getElementById('filterForm');
+                if (filterForm) {
+                    filterForm.submit();
+                }
+            }, 500);
+        });
+    }
     
     // Manual Clock In Modal handlers
     document.querySelectorAll('.btn-clock-in').forEach(button => {
@@ -683,8 +761,101 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.btn-note').forEach(button => {
         button.addEventListener('click', function() {
             currentStudentId = this.getAttribute('data-student-id');
+            
+            // Set default dates using server date
+            const today = '{{ $date }}'; // Use server date from controller
+            document.getElementById('noteStartDate').value = today;
+            document.getElementById('noteEndDate').value = today;
+            document.getElementById('noteEndDate').setAttribute('min', today);
+            document.getElementById('noteStartDate').setAttribute('min', today);
+            
+            // Reset form
+            document.getElementById('status').value = '';
+            document.getElementById('multiDayOptions').classList.add('d-none');
+            document.getElementById('dateRangeSection').classList.add('d-none');
+            document.getElementById('singleDay').checked = true;
+            document.getElementById('submitButtonText').textContent = 'Simpan';
         });
     });
+    
+    // Status change handler
+    document.getElementById('status').addEventListener('change', function() {
+        const multiDayOptions = document.getElementById('multiDayOptions');
+        
+        if (this.value === 'sick' || this.value === 'permission') {
+            multiDayOptions.classList.remove('d-none');
+        } else {
+            multiDayOptions.classList.add('d-none');
+            document.getElementById('dateRangeSection').classList.add('d-none');
+            document.getElementById('singleDay').checked = true;
+        }
+        
+        updateSubmitButtonText();
+    });
+    
+    // Duration type change handlers
+    document.querySelectorAll('input[name="duration_type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const dateRangeSection = document.getElementById('dateRangeSection');
+            
+            if (this.value === 'multi') {
+                dateRangeSection.classList.remove('d-none');
+                updateNoteDateRangeInfo();
+            } else {
+                dateRangeSection.classList.add('d-none');
+                document.getElementById('noteDateRangeInfo').classList.add('d-none');
+            }
+            
+            updateSubmitButtonText();
+        });
+    });
+    
+    // Date range change handler
+    document.getElementById('noteStartDate').addEventListener('change', updateNoteDateRangeInfo);
+    document.getElementById('noteEndDate').addEventListener('change', updateNoteDateRangeInfo);
+    
+    function updateNoteDateRangeInfo() {
+        const startDate = document.getElementById('noteStartDate').value;
+        const endDate = document.getElementById('noteEndDate').value;
+        const infoDiv = document.getElementById('noteDateRangeInfo');
+        const infoText = document.getElementById('noteDateRangeText');
+        
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            
+            if (start <= end) {
+                infoText.textContent = `Periode: ${diffDays} hari (${formatDate(start)} - ${formatDate(end)})`;
+                infoDiv.classList.remove('d-none', 'alert-danger');
+                infoDiv.classList.add('alert-secondary');
+            } else {
+                infoText.textContent = 'Tanggal akhir harus setelah atau sama dengan tanggal mulai';
+                infoDiv.classList.remove('d-none', 'alert-secondary');
+                infoDiv.classList.add('alert-danger');
+            }
+        } else {
+            infoDiv.classList.add('d-none');
+        }
+    }
+    
+    function updateSubmitButtonText() {
+        const status = document.getElementById('status').value;
+        const durationType = document.querySelector('input[name="duration_type"]:checked')?.value;
+        const submitBtn = document.getElementById('submitButtonText');
+        
+        if ((status === 'sick' || status === 'permission') && durationType === 'multi') {
+            submitBtn.textContent = 'Berikan Izin Multi-Hari';
+        } else {
+            submitBtn.textContent = 'Simpan';
+        }
+    }
+    
+    function formatDate(date) {
+        const options = { day: 'numeric', month: 'short', year: 'numeric' };
+        return date.toLocaleDateString('id-ID', options);
+    }
     
     // Note form submission
     document.getElementById('noteForm').addEventListener('submit', function(e) {
@@ -693,6 +864,30 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!currentStudentId) return;
         
         const formData = new FormData(this);
+        const durationType = document.querySelector('input[name="duration_type"]:checked')?.value;
+        const status = document.getElementById('status').value;
+        
+        // Determine which endpoint to use
+        let endpoint;
+        
+        if ((status === 'sick' || status === 'permission') && durationType === 'multi') {
+            // Use bulk permission endpoint
+            endpoint = `/admin/attendance/${currentStudentId}/bulk-permission`;
+            
+            // Prepare data for bulk permission
+            formData.set('permission_type', status);
+            
+            // Validate end date for multi-day
+            const endDate = document.getElementById('noteEndDate').value;
+            if (!endDate) {
+                showToast('error', 'Harap pilih tanggal akhir untuk izin multi-hari');
+                return;
+            }
+        } else {
+            // Use regular note endpoint
+            endpoint = `/admin/attendance/${currentStudentId}/note`;
+        }
+        
         const submitBtn = this.querySelector('button[type="submit"]');
         const spinner = submitBtn.querySelector('.spinner-border');
         
@@ -700,7 +895,7 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.disabled = true;
         spinner.classList.remove('d-none');
         
-        fetch(`/admin/attendance/${currentStudentId}/note`, {
+        fetch(endpoint, {
             method: 'POST',
             headers: {
                 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
@@ -710,39 +905,16 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                // Update UI
-                const row = document.querySelector(`[data-student-id="${currentStudentId}"]`);
-                row.querySelector('.status-badge').innerHTML = data.data.status_badge;
-                
-                // Hide clock in/out buttons if status is sick or permission
-                if (data.data.status === 'sick' || data.data.status === 'permission') {
-                    const clockInBtn = row.querySelector('.btn-clock-in');
-                    const clockOutBtn = row.querySelector('.btn-clock-out');
-                    
-                    if (clockInBtn) {
-                        clockInBtn.remove();
-                    }
-                    if (clockOutBtn) {
-                        clockOutBtn.remove();
-                    }
-                }
-                
-                // Hide note button after successful note input
-                const noteButton = row.querySelector('.btn-note');
-                if (noteButton) {
-                    noteButton.className = 'btn btn-secondary btn-sm';
-                    noteButton.disabled = true;
-                    noteButton.title = 'Note sudah diisi';
-                    noteButton.removeAttribute('data-bs-toggle');
-                    noteButton.removeAttribute('data-bs-target');
-                    noteButton.innerHTML = '<i class="fas fa-sticky-note"></i> Note';
-                }
-                
                 // Hide modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('noteModal'));
                 modal.hide();
                 
                 showToast('success', data.message);
+                
+                // Reload page after short delay to show updated data
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
             } else {
                 // Check if it's early note warning
                 if (data.early_note_disabled) {
@@ -770,6 +942,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     document.getElementById('noteModal').addEventListener('hidden.bs.modal', function() {
         document.getElementById('noteForm').reset();
+        document.getElementById('multiDayOptions').classList.add('d-none');
+        document.getElementById('dateRangeSection').classList.add('d-none');
+        document.getElementById('noteDateRangeInfo').classList.add('d-none');
         currentStudentId = null;
     });
     
@@ -781,76 +956,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="d-flex">
                     <div class="toast-body">
                         <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'warning' ? 'exclamation-triangle' : 'exclamation-circle'} me-2"></i>
-                        ${message}
-                    </div>
-                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                </div>
-            </div>
-        `;
-        
-        // Add to toast container (create if doesn't exist)
-        let toastContainer = document.querySelector('.toast-container');
-        if (!toastContainer) {
-            toastContainer = document.createElement('div');
-            toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
-            document.body.appendChild(toastContainer);
-        }
-        
-        toastContainer.insertAdjacentHTML('beforeend', toastHtml);
-        
-        // Show toast
-        const toastElement = toastContainer.lastElementChild;
-        const toast = new bootstrap.Toast(toastElement);
-        toast.show();
-        
-        // Remove from DOM after hidden
-        toastElement.addEventListener('hidden.bs.toast', function() {
-            this.remove();
-        });
-    }
-});
-</script>
-@endpush-sticky-note"></i> Note';
-                }
-                
-                // Hide modal
-                const modal = bootstrap.Modal.getInstance(document.getElementById('noteModal'));
-                modal.hide();
-                
-                showToast('success', data.message);
-            } else {
-                // Check if it's early note warning
-                if (data.early_note_disabled) {
-                    showToast('warning', data.message);
-                } else {
-                    showToast('error', data.message || 'Terjadi kesalahan');
-                }
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showToast('error', 'Terjadi kesalahan saat menyimpan');
-        })
-        .finally(() => {
-            submitBtn.disabled = false;
-            spinner.classList.add('d-none');
-        });
-    });
-    
-    // Reset form when modal is closed
-    document.getElementById('noteModal').addEventListener('hidden.bs.modal', function() {
-        document.getElementById('noteForm').reset();
-        currentStudentId = null;
-    });
-    
-    // Toast notification function
-    function showToast(type, message) {
-        // Create toast element
-        const toastHtml = `
-            <div class="toast align-items-center text-white bg-${type === 'success' ? 'success' : 'danger'} border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                <div class="d-flex">
-                    <div class="toast-body">
-                        <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
                         ${message}
                     </div>
                     <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>

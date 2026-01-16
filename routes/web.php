@@ -56,6 +56,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::post('/attendance/{student}/clock-in', [AttendanceController::class, 'clockIn'])->name('attendance.clock-in');
     Route::post('/attendance/{student}/clock-out', [AttendanceController::class, 'clockOut'])->name('attendance.clock-out');
     Route::post('/attendance/{student}/note', [AttendanceController::class, 'updateNote'])->name('attendance.note');
+    Route::post('/attendance/{student}/bulk-permission', [AttendanceController::class, 'bulkPermission'])->name('attendance.bulk-permission');
     Route::get('/attendance/{student}/data/{date?}', [AttendanceController::class, 'getAttendanceData'])->name('attendance.data');
     
     // Settings routes (accessible by both admin and teacher)

@@ -526,7 +526,7 @@
                     </a>
                     
                     <!-- Dropdown Menu Pelanggaran -->
-                    <div class="nav-dropdown" onmouseenter="showDropdown('violationDropdown')" onmouseleave="hideDropdown('violationDropdown')">
+                    {{-- <div class="nav-dropdown" onmouseenter="showDropdown('violationDropdown')" onmouseleave="hideDropdown('violationDropdown')">
                         <a href="#" class="nav-link-sidebar nav-dropdown-toggle {{ request()->routeIs('admin.violation-types.*') || request()->routeIs('admin.student-violations.*') ? 'active' : '' }}">
                             <i class="fas fa-exclamation-triangle"></i>
                             <span class="nav-text">Pelanggaran</span>
@@ -544,7 +544,7 @@
                                 <span class="nav-text">Data Pelanggaran</span>
                             </a>
                         </div>
-                    </div>
+                    </div> --}}
                     
                     <a href="{{ route('admin.users.index') }}" 
                        class="nav-link-sidebar {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
@@ -570,10 +570,10 @@
                                 <i class="fas fa-file-alt"></i>
                                 <span class="nav-text">Laporan Absensi</span>
                             </a>
-                            <a href="#" class="nav-link-sidebar nav-sub">
+                            {{-- <a href="#" class="nav-link-sidebar nav-sub">
                                 <i class="fas fa-exclamation-circle"></i>
                                 <span class="nav-text">Laporan Pelanggaran</span>
-                            </a>
+                            </a> --}}
                         </div>
                     </div>
                     

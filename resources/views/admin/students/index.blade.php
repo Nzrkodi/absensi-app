@@ -35,7 +35,7 @@
     
     <!-- Search & Filter -->
     <div class="card-body bg-light border-bottom">
-        <form action="{{ route('admin.students.index') }}" method="GET">
+        <form action="{{ route('admin.students.index') }}" method="GET" id="filterForm">
             <div class="row g-2">
                 <div class="col-12 col-md-5">
                     <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama atau NISN..." class="form-control form-control">
@@ -51,10 +51,9 @@
                     </select>
                 </div>
                 <div class="col-12 col-md-3">
-                    <div class="d-flex gap-2">
-                        <button type="submit" class="btn btn-secondary flex-grow-1">Cari</button>
-                        <a href="{{ route('admin.students.index') }}" class="btn btn-outline-secondary flex-grow-1">Reset</a>
-                    </div>
+                    <a href="{{ route('admin.students.index') }}" class="btn btn-outline-secondary w-100">
+                        <i class="fas fa-undo me-1"></i> Reset Filter
+                    </a>
                 </div>
             </div>
         </form>
@@ -459,6 +458,36 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Auto-submit form when class filter changes
+    const classFilter = document.querySelector('select[name="class_id"]');
+    if (classFilter) {
+        classFilter.addEventListener('change', function() {
+            // Get the filter form and submit it
+            const filterForm = document.getElementById('filterForm');
+            if (filterForm) {
+                filterForm.submit();
+            }
+        });
+    }
+    
+    // Auto-submit form when search input changes (with debounce)
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+        let searchTimeout;
+        searchInput.addEventListener('input', function() {
+            // Clear previous timeout
+            clearTimeout(searchTimeout);
+            
+            // Set new timeout for 500ms delay
+            searchTimeout = setTimeout(() => {
+                const filterForm = document.getElementById('filterForm');
+                if (filterForm) {
+                    filterForm.submit();
+                }
+            }, 500);
+        });
+    }
+
     const addForm = document.getElementById('addStudentForm');
     const editForm = document.getElementById('editStudentForm');
     const importForm = document.getElementById('importForm');
