@@ -16,7 +16,15 @@ class Attendance extends Model
         'clock_in',
         'clock_out',
         'status',
-        'notes'
+        'notes',
+        'clock_in_photo',
+        'clock_out_photo',
+        'clock_in_latitude',
+        'clock_in_longitude',
+        'clock_out_latitude',
+        'clock_out_longitude',
+        'location_verified',
+        'distance_from_school'
     ];
 
     protected $casts = [

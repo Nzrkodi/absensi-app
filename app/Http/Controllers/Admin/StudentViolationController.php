@@ -70,14 +70,20 @@ class StudentViolationController extends Controller
     {
         $students = Student::where('status', 'active')
             ->orderBy('name')
-            ->get(['id', 'name', 'nisn']);
+            ->get(['id', 'name', 'nisn', 'kelas']);
         
         $violationTypes = ViolationType::active()
             ->orderBy('category')
             ->orderBy('name')
             ->get();
 
-        return view('admin.student-violations.create', compact('students', 'violationTypes'));
+        // Get teachers/staff for "reported by" dropdown
+        $teachers = \App\Models\User::where('role', '!=', 'student')
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return view('admin.student-violations.create', compact('students', 'violationTypes', 'teachers'));
     }
 
     /**
@@ -212,14 +218,50 @@ class StudentViolationController extends Controller
             ->orderBy('violation_date', 'desc')
             ->get();
 
+        $totalPoints = $violations->sum(function($violation) {
+            return $violation->violationType->points;
+        });
+
+        $violationsByCategory = [
+            'ringan' => $violations->filter(function($violation) {
+                return $violation->violationType->category === 'ringan';
+            })->count(),
+            'sedang' => $violations->filter(function($violation) {
+                return $violation->violationType->category === 'sedang';
+            })->count(),
+            'berat' => $violations->filter(function($violation) {
+                return $violation->violationType->category === 'berat';
+            })->count()
+        ];
+
         return response()->json([
             'violations' => $violations,
-            'total_points' => $student->total_violation_points,
-            'violations_by_category' => [
-                'ringan' => $student->getViolationsByCategory('ringan'),
-                'sedang' => $student->getViolationsByCategory('sedang'),
-                'berat' => $student->getViolationsByCategory('berat')
-            ]
+            'total_points' => $totalPoints,
+            'violations_by_category' => $violationsByCategory,
+            'recent_violations' => $violations->take(5)
+        ]);
+    }
+
+    /**
+     * Get student info for AJAX requests
+     */
+    public function getStudentInfo(Student $student)
+    {
+        $totalPoints = $student->violations()
+            ->join('violation_types', 'student_violations.violation_type_id', '=', 'violation_types.id')
+            ->sum('violation_types.points');
+
+        $recentViolations = $student->violations()
+            ->with('violationType')
+            ->orderBy('violation_date', 'desc')
+            ->take(3)
+            ->get();
+
+        return response()->json([
+            'student' => $student,
+            'total_points' => $totalPoints,
+            'recent_violations' => $recentViolations,
+            'violations_count' => $student->violations()->count()
         ]);
     }
 }

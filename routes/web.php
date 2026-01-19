@@ -58,6 +58,7 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
     Route::post('/attendance/{student}/note', [AttendanceController::class, 'updateNote'])->name('attendance.note');
     Route::post('/attendance/{student}/bulk-permission', [AttendanceController::class, 'bulkPermission'])->name('attendance.bulk-permission');
     Route::get('/attendance/{student}/data/{date?}', [AttendanceController::class, 'getAttendanceData'])->name('attendance.data');
+    Route::get('/attendance/{attendance}/detail', [AttendanceController::class, 'getAttendanceDetail'])->name('attendance.detail');
     
     // Settings routes (accessible by both admin and teacher)
     Route::get('/settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
@@ -110,7 +111,30 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         // Student Violations management (admin only)
         Route::resource('student-violations', \App\Http\Controllers\Admin\StudentViolationController::class);
         Route::get('students/{student}/violations', [\App\Http\Controllers\Admin\StudentViolationController::class, 'getStudentViolations'])->name('students.violations');
+        Route::get('students/{student}/info', [\App\Http\Controllers\Admin\StudentViolationController::class, 'getStudentInfo'])->name('students.info');
+        
+        // School Locations management (admin only)
+        Route::resource('school-locations', \App\Http\Controllers\Admin\SchoolLocationController::class);
     });
+});
+
+// Student Routes (Mobile Attendance)
+Route::prefix('student')->name('student.')->group(function () {
+    // Login routes
+    Route::get('/login', [\App\Http\Controllers\Student\LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [\App\Http\Controllers\Student\LoginController::class, 'login'])->name('login.submit');
+    Route::get('/logout', [\App\Http\Controllers\Student\LoginController::class, 'logout'])->name('logout');
+    
+    // Attendance routes (require student session)
+    Route::get('/attendance', [\App\Http\Controllers\Student\AttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('/attendance/clock-in', [\App\Http\Controllers\Student\AttendanceController::class, 'clockIn'])->name('attendance.clock-in');
+    Route::post('/attendance/clock-out', [\App\Http\Controllers\Student\AttendanceController::class, 'clockOut'])->name('attendance.clock-out');
+});
+
+// API Routes for mobile/AJAX
+Route::prefix('api')->group(function () {
+    Route::get('/school-locations/active', [\App\Http\Controllers\Admin\SchoolLocationController::class, 'getActiveLocations']);
+    Route::post('/school-locations/validate', [\App\Http\Controllers\Admin\SchoolLocationController::class, 'validateLocation']);
 });
 
 

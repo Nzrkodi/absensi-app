@@ -85,7 +85,10 @@ class AttendanceController extends Controller
             $request->validate([
                 'clock_mode' => 'required|in:current,manual',
                 'manual_time' => 'required_if:clock_mode,manual|nullable|date_format:H:i',
-                'notes' => 'nullable|string|max:500'
+                'notes' => 'nullable|string|max:500',
+                'photo' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+                'latitude' => 'nullable|numeric|between:-90,90',
+                'longitude' => 'nullable|numeric|between:-180,180'
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {
             Log::error('Validation Error', [
@@ -215,6 +218,32 @@ class AttendanceController extends Controller
         $date = Carbon::today('Asia/Makassar');
         $now = Carbon::now('Asia/Makassar');
         
+        // Debug log
+        Log::info('Clock Out Request', [
+            'student_id' => $student->id,
+            'request_data' => $request->all(),
+            'headers' => $request->headers->all()
+        ]);
+        
+        // Validate request for manual time
+        try {
+            $request->validate([
+                'clock_mode' => 'required|in:current,manual',
+                'manual_time' => 'required_if:clock_mode,manual|nullable|date_format:H:i',
+                'notes' => 'nullable|string|max:500'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Clock Out Validation Error', [
+                'errors' => $e->errors(),
+                'request_data' => $request->all()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Data tidak valid: ' . implode(', ', array_flatten($e->errors()))
+            ]);
+        }
+        
         $attendance = Attendance::where('student_id', $student->id)
             ->where('date', $date)
             ->first();
@@ -233,15 +262,67 @@ class AttendanceController extends Controller
             ]);
         }
 
+        // Determine clock out time based on mode
+        $clockOutTime = $now;
+        if ($request->clock_mode === 'manual' && $request->manual_time) {
+            $clockOutTime = Carbon::createFromFormat('H:i', $request->manual_time, 'Asia/Makassar')
+                ->setDate($date->year, $date->month, $date->day);
+            
+            // Validate manual time is not in the future
+            if ($clockOutTime->gt($now)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Waktu clock out tidak boleh di masa depan'
+                ]);
+            }
+            
+            // Validate manual time is not before clock in time
+            $clockInTime = Carbon::createFromFormat('H:i:s', $attendance->clock_in, 'Asia/Makassar')
+                ->setDate($date->year, $date->month, $date->day);
+            
+            if ($clockOutTime->lte($clockInTime)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Waktu clock out harus setelah waktu clock in (' . $clockInTime->format('H:i') . ')'
+                ]);
+            }
+            
+            // Validate manual time is not too far in the past (same day only)
+            if ($clockOutTime->format('Y-m-d') !== $date->format('Y-m-d')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Waktu clock out harus pada hari yang sama'
+                ]);
+            }
+        }
+        
+        // Prepare notes for manual clock out
+        $notes = $request->notes;
+        if ($request->clock_mode === 'manual') {
+            $manualNote = "Clock out manual pada jam {$clockOutTime->format('H:i')}";
+            $existingNotes = $attendance->notes;
+            
+            if ($notes) {
+                $finalNotes = $existingNotes ? $existingNotes . ' | ' . $manualNote . ' - ' . $notes : $manualNote . ' - ' . $notes;
+            } else {
+                $finalNotes = $existingNotes ? $existingNotes . ' | ' . $manualNote : $manualNote;
+            }
+        } else {
+            $finalNotes = $notes ? ($attendance->notes ? $attendance->notes . ' | ' . $notes : $notes) : $attendance->notes;
+        }
+
         $attendance->update([
-            'clock_out' => $now->format('H:i:s')
+            'clock_out' => $clockOutTime->format('H:i:s'),
+            'notes' => $finalNotes
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Clock out berhasil',
+            'message' => $request->clock_mode === 'manual' 
+                ? "Clock out berhasil dengan waktu manual {$clockOutTime->format('H:i')}" 
+                : 'Clock out berhasil',
             'data' => [
-                'clock_out' => $now->format('H:i')
+                'clock_out' => $clockOutTime->format('H:i')
             ]
         ]);
     }
@@ -430,6 +511,19 @@ class AttendanceController extends Controller
                 'skipped_dates' => $skippedDates,
                 'total_processed' => $totalProcessed
             ]
+        ]);
+    }
+
+    /**
+     * Get detailed attendance information including photos and location
+     */
+    public function getAttendanceDetail(Attendance $attendance)
+    {
+        $attendance->load('student');
+        
+        return response()->json([
+            'success' => true,
+            'attendance' => $attendance
         ]);
     }
 }

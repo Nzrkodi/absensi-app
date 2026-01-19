@@ -4,6 +4,106 @@
 @section('header', 'Absensi Siswa')
 
 @section('content')
+<style>
+/* Custom styles for improved UI */
+.attendance-card {
+    transition: all 0.3s ease;
+    border: none !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.attendance-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+}
+
+.btn-clock-in {
+    background: linear-gradient(45deg, #28a745, #20c997);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-clock-in:hover {
+    background: linear-gradient(45deg, #218838, #1ea080);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-clock-out {
+    background: linear-gradient(45deg, #ffc107, #fd7e14);
+    border: none;
+    color: #212529 !important;
+    transition: all 0.3s ease;
+}
+
+.btn-clock-out:hover {
+    background: linear-gradient(45deg, #e0a800, #e8590c);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+    color: #212529 !important;
+}
+
+.btn-note {
+    background: linear-gradient(45deg, #17a2b8, #6f42c1);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.btn-note:hover {
+    background: linear-gradient(45deg, #138496, #5a32a3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+}
+
+.status-badge .badge {
+    font-size: 0.75rem;
+    padding: 0.5em 0.75em;
+    border-radius: 0.5rem;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,123,255,0.05);
+    transform: scale(1.01);
+    transition: all 0.2s ease;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    border-radius: 1rem 1rem 0 0;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.alert {
+    border: none;
+    border-radius: 0.75rem;
+}
+
+.card-header {
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+}
+
+@media (max-width: 768px) {
+    .attendance-card {
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn-sm {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+}
+</style>
+
 <!-- Alert Messages -->
 @if(session('success'))
     <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -40,7 +140,7 @@
     </div>
 @endif
 
-<div class="card border-0 shadow-sm">
+<div class="card attendance-card border-0 shadow-sm">
     <div class="card-header bg-white d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-2 py-3">
         <div>
             <h5 class="card-title mb-0">Absensi Siswa - {{ \Carbon\Carbon::parse($date)->format('d F Y') }}</h5>
@@ -113,6 +213,7 @@
                         <th>Clock In</th>
                         <th>Clock Out</th>
                         <th>Status</th>
+                        <th>Detail</th>
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -137,6 +238,17 @@
                                 {!! $attendance->status_badge !!}
                             @else
                                 <span class="badge bg-light text-dark">Belum Absen</span>
+                            @endif
+                        </td>
+                        <td>
+                            @if($attendance && ($attendance->clock_in_photo || $attendance->clock_in_latitude))
+                                <button type="button" class="btn btn-outline-info btn-sm" 
+                                        onclick="showAttendanceDetail({{ $attendance->id }})"
+                                        title="Lihat foto dan lokasi">
+                                    <i class="fas fa-eye"></i> Detail
+                                </button>
+                            @else
+                                <span class="text-muted small">-</span>
                             @endif
                         </td>
                         <td>
@@ -190,7 +302,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="text-center text-muted py-4">Belum ada data siswa</td>
+                        <td colspan="9" class="text-center text-muted py-4">Belum ada data siswa</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -199,6 +311,35 @@
 
         <!-- Mobile Cards -->
         <div class="d-md-none">
+            <!-- Mobile Status Bar -->
+            <div class="card border-0 shadow-sm mb-3 bg-light">
+                <div class="card-body p-3">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div id="locationStatus" class="small">
+                                <i class="fas fa-spinner fa-spin text-muted"></i> Mengecek lokasi...
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div id="photoStatus" class="small">
+                                <i class="fas fa-camera text-muted"></i> Belum ada foto
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-6">
+                            <button class="btn btn-info btn-sm w-100" onclick="attendanceMobile.initializeGeolocation()">
+                                <i class="fas fa-map-marker-alt me-1"></i> Cek Lokasi
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button class="btn btn-primary btn-sm w-100" onclick="attendanceMobile.capturePhoto()">
+                                <i class="fas fa-camera me-1"></i> Ambil Foto
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             @forelse($students ?? [] as $index => $student)
             @php
                 $attendance = $student->attendances->first();
@@ -234,6 +375,14 @@
                 </div>
                 
                 <div class="d-flex gap-2 flex-wrap">
+                    @if($attendance && ($attendance->clock_in_photo || $attendance->clock_in_latitude))
+                        <button type="button" class="btn btn-outline-info btn-sm" 
+                                onclick="showAttendanceDetail({{ $attendance->id }})"
+                                title="Lihat foto dan lokasi">
+                            <i class="fas fa-eye"></i> Detail
+                        </button>
+                    @endif
+                    
                     @if($isHoliday)
                         <span class="badge bg-warning text-dark">
                             <i class="fas fa-calendar-times me-1"></i> Hari Libur
@@ -253,7 +402,7 @@
                                 <i class="fas fa-sign-in-alt"></i> Clock In
                             </button>
                         @elseif($attendance && $attendance->clock_in && !$attendance->clock_out && !$isDisabledStatus)
-                            <button type="button" class="btn btn-warning btn-sm btn-clock-out" data-student-id="{{ $student->id }}">
+                            <button type="button" class="btn btn-warning btn-sm btn-clock-out" data-student-id="{{ $student->id }}" data-bs-toggle="modal" data-bs-target="#manualClockOutModal">
                                 <i class="fas fa-sign-out-alt"></i> Clock Out
                             </button>
                         @endif
@@ -355,6 +504,68 @@
     </div>
 </div>
 
+<!-- Manual Clock Out Modal -->
+<div class="modal fade" id="manualClockOutModal" tabindex="-1" aria-labelledby="manualClockOutModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="manualClockOutModalLabel">Clock Out Manual</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="manualClockOutForm">
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Fitur Clock Out Manual:</strong> Gunakan untuk mencatat waktu kepulangan siswa yang sebenarnya, terutama ketika ada keperluan khusus atau penyesuaian waktu.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Pilih Mode Clock Out</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="clock_mode" id="currentTimeOut" value="current" checked>
+                            <label class="form-check-label" for="currentTimeOut">
+                                <strong>Waktu Sekarang</strong> - <span id="currentTimeOutDisplay">{{ \Carbon\Carbon::now('Asia/Makassar')->format('H:i') }}</span>
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="clock_mode" id="manualTimeOut" value="manual">
+                            <label class="form-check-label" for="manualTimeOut">
+                                <strong>Waktu Manual</strong> - Input waktu kepulangan yang sebenarnya
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="manualTimeOutInput" style="display: none;">
+                        <label for="manual_time_out" class="form-label">Waktu Kepulangan <span class="text-danger">*</span></label>
+                        <input type="time" class="form-control" id="manual_time_out" name="manual_time">
+                        <div class="form-text">
+                            <i class="fas fa-lightbulb text-warning me-1"></i>
+                            Masukkan waktu kepulangan siswa yang sebenarnya. Waktu harus setelah waktu clock in.
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="manual_notes_out" class="form-label">Keterangan (Opsional)</label>
+                        <textarea class="form-control" id="manual_notes_out" name="notes" rows="2" placeholder="Contoh: Pulang lebih awal karena sakit..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-warning" id="clockOutWarning" style="display: none;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Perhatian:</strong> <span id="clockOutWarningText"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-warning">
+                        <span class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+                        <i class="fas fa-sign-out-alt me-1"></i> Clock Out
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <!-- Note Modal -->
 <div class="modal fade" id="noteModal" tabindex="-1" aria-labelledby="noteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -440,6 +651,7 @@
 </div>
 
 @push('scripts')
+<script src="{{ asset('js/attendance-mobile.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     let currentStudentId = null;
@@ -463,6 +675,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const currentTimeDisplay = document.getElementById('currentTimeDisplay');
         if (currentTimeDisplay) {
             currentTimeDisplay.textContent = currentTimeStr.substring(0, 5); // HH:MM format
+        }
+        
+        // Update current time display in clock out modal
+        const currentTimeOutDisplay = document.getElementById('currentTimeOutDisplay');
+        if (currentTimeOutDisplay) {
+            currentTimeOutDisplay.textContent = currentTimeStr.substring(0, 5); // HH:MM format
         }
         
         // Update current time display in warning
@@ -636,6 +854,136 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    // Manual Clock Out Modal handlers
+    let currentClockOutStudentId = null;
+    
+    document.querySelectorAll('.btn-clock-out').forEach(button => {
+        button.addEventListener('click', function() {
+            currentClockOutStudentId = this.getAttribute('data-student-id');
+            
+            // Reset form
+            document.getElementById('manualClockOutForm').reset();
+            document.getElementById('currentTimeOut').checked = true;
+            document.getElementById('manualTimeOutInput').style.display = 'none';
+            document.getElementById('clockOutWarning').style.display = 'none';
+            
+            // Get student's clock in time for validation
+            const row = document.querySelector(`[data-student-id="${currentClockOutStudentId}"]`);
+            const clockInTime = row.querySelector('.clock-in-time').textContent.trim();
+            
+            // Store clock in time for validation
+            document.getElementById('manualClockOutForm').setAttribute('data-clock-in-time', clockInTime);
+        });
+    });
+    
+    // Clock Out mode radio button handlers
+    document.querySelectorAll('#manualClockOutModal input[name="clock_mode"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const manualTimeOutInput = document.getElementById('manualTimeOutInput');
+            const manualTimeOutField = document.getElementById('manual_time_out');
+            
+            if (this.value === 'manual') {
+                manualTimeOutInput.style.display = 'block';
+                manualTimeOutField.required = true;
+                checkClockOutTime();
+            } else {
+                manualTimeOutInput.style.display = 'none';
+                manualTimeOutField.required = false;
+                document.getElementById('clockOutWarning').style.display = 'none';
+            }
+        });
+    });
+    
+    // Manual clock out time input change handler
+    document.getElementById('manual_time_out').addEventListener('change', checkClockOutTime);
+    
+    function checkClockOutTime() {
+        const manualTimeOutValue = document.getElementById('manual_time_out').value;
+        const clockOutWarning = document.getElementById('clockOutWarning');
+        const clockOutWarningText = document.getElementById('clockOutWarningText');
+        const clockInTime = document.getElementById('manualClockOutForm').getAttribute('data-clock-in-time');
+        
+        if (manualTimeOutValue && clockInTime && clockInTime !== '-') {
+            const [clockInHour, clockInMinute] = clockInTime.split(':').map(Number);
+            const [clockOutHour, clockOutMinute] = manualTimeOutValue.split(':').map(Number);
+            
+            const clockInMinutes = clockInHour * 60 + clockInMinute;
+            const clockOutMinutes = clockOutHour * 60 + clockOutMinute;
+            
+            if (clockOutMinutes <= clockInMinutes) {
+                clockOutWarningText.textContent = `Waktu clock out harus setelah waktu clock in (${clockInTime})`;
+                clockOutWarning.style.display = 'block';
+            } else {
+                clockOutWarning.style.display = 'none';
+            }
+        } else {
+            clockOutWarning.style.display = 'none';
+        }
+    }
+    
+    // Manual Clock Out form submission
+    document.getElementById('manualClockOutForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        if (!currentClockOutStudentId) return;
+        
+        const formData = new FormData(this);
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const spinner = submitBtn.querySelector('.spinner-border');
+        
+        // Show loading
+        submitBtn.disabled = true;
+        spinner.classList.remove('d-none');
+        
+        fetch(`/admin/attendance/${currentClockOutStudentId}/clock-out`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update UI
+                const row = document.querySelector(`[data-student-id="${currentClockOutStudentId}"]`);
+                row.querySelector('.clock-out-time').textContent = data.data.clock_out;
+                
+                // Remove clock out button
+                const clockOutBtn = row.querySelector('.btn-clock-out');
+                if (clockOutBtn) {
+                    clockOutBtn.remove();
+                }
+                
+                // Disable note button
+                const noteButton = row.querySelector('.btn-note');
+                if (noteButton) {
+                    noteButton.className = 'btn btn-secondary btn-sm';
+                    noteButton.disabled = true;
+                    noteButton.title = 'Absensi sudah lengkap';
+                    noteButton.removeAttribute('data-bs-toggle');
+                    noteButton.removeAttribute('data-bs-target');
+                }
+                
+                // Hide modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('manualClockOutModal'));
+                modal.hide();
+                
+                showToast('success', data.message);
+            } else {
+                showToast('error', data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', 'Terjadi kesalahan saat clock out');
+        })
+        .finally(() => {
+            submitBtn.disabled = false;
+            spinner.classList.add('d-none');
+        });
+    });
+    
     // Manual Clock In form submission
     document.getElementById('manualClockInForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -670,11 +1018,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 clockInBtn.className = 'btn btn-warning btn-sm btn-clock-out';
                 clockInBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Clock Out';
                 clockInBtn.setAttribute('data-student-id', currentClockInStudentId);
-                clockInBtn.removeAttribute('data-bs-toggle');
-                clockInBtn.removeAttribute('data-bs-target');
-                
-                // Add new event listener for clock out
-                addClockOutListener(clockInBtn);
+                clockInBtn.setAttribute('data-bs-toggle', 'modal');
+                clockInBtn.setAttribute('data-bs-target', '#manualClockOutModal');
                 
                 // Hide modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('manualClockInModal'));
@@ -699,63 +1044,6 @@ document.addEventListener('DOMContentLoaded', function() {
             spinner.classList.add('d-none');
         });
     });
-    
-    // Clock Out buttons
-    function addClockOutListener(button) {
-        button.addEventListener('click', function() {
-            const studentId = this.getAttribute('data-student-id');
-            const originalText = this.innerHTML;
-            
-            // Show loading
-            this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Loading...';
-            this.disabled = true;
-            
-            fetch(`/admin/attendance/${studentId}/clock-out`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update UI
-                    const row = document.querySelector(`[data-student-id="${studentId}"]`);
-                    row.querySelector('.clock-out-time').textContent = data.data.clock_out;
-                    
-                    // Remove clock out button
-                    this.remove();
-                    
-                    // Disable note button
-                    const noteButton = row.querySelector('.btn-note');
-                    if (noteButton) {
-                        noteButton.className = 'btn btn-secondary btn-sm';
-                        noteButton.disabled = true;
-                        noteButton.title = 'Absensi sudah lengkap';
-                        noteButton.removeAttribute('data-bs-toggle');
-                        noteButton.removeAttribute('data-bs-target');
-                    }
-                    
-                    showToast('success', data.message);
-                } else {
-                    showToast('error', data.message);
-                    this.innerHTML = originalText;
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('error', 'Terjadi kesalahan saat clock out');
-                this.innerHTML = originalText;
-            })
-            .finally(() => {
-                this.disabled = false;
-            });
-        });
-    }
-    
-    // Initialize existing clock out buttons
-    document.querySelectorAll('.btn-clock-out').forEach(addClockOutListener);
     
     // Note buttons
     document.querySelectorAll('.btn-note').forEach(button => {
@@ -939,6 +1227,13 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('manualClockInForm').reset();
         currentClockInStudentId = null;
     });
+
+    document.getElementById('manualClockOutModal').addEventListener('hidden.bs.modal', function() {
+        document.getElementById('manualClockOutForm').reset();
+        document.getElementById('manualTimeOutInput').style.display = 'none';
+        document.getElementById('clockOutWarning').style.display = 'none';
+        currentClockOutStudentId = null;
+    });
     
     document.getElementById('noteModal').addEventListener('hidden.bs.modal', function() {
         document.getElementById('noteForm').reset();
@@ -984,6 +1279,245 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Function to show attendance detail
+function showAttendanceDetail(attendanceId) {
+    const modal = new bootstrap.Modal(document.getElementById('attendanceDetailModal'));
+    const content = document.getElementById('attendanceDetailContent');
+    
+    // Show loading
+    content.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Memuat detail absensi...</p>
+        </div>
+    `;
+    
+    modal.show();
+    
+    // Fetch attendance detail
+    fetch(`/admin/attendance/${attendanceId}/detail`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const attendance = data.attendance;
+                const student = attendance.student;
+                
+                let photosHtml = '';
+                let locationHtml = '';
+                
+                // Clock In Photo and Location
+                if (attendance.clock_in_photo || attendance.clock_in_latitude) {
+                    photosHtml += `
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Clock In</h6>
+                                </div>
+                                <div class="card-body">
+                    `;
+                    
+                    if (attendance.clock_in_photo) {
+                        photosHtml += `
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Foto:</label>
+                                <div class="text-center">
+                                    <img src="/storage/${attendance.clock_in_photo}" 
+                                         class="img-fluid rounded shadow-sm" 
+                                         style="max-height: 200px; cursor: pointer;"
+                                         onclick="window.open('/storage/${attendance.clock_in_photo}', '_blank')"
+                                         alt="Foto Clock In">
+                                    <div class="mt-2">
+                                        <small class="text-muted">Klik untuk memperbesar</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    if (attendance.clock_in_latitude && attendance.clock_in_longitude) {
+                        photosHtml += `
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Lokasi:</label>
+                                <div class="bg-light p-2 rounded">
+                                    <small class="d-block"><strong>Latitude:</strong> ${attendance.clock_in_latitude}</small>
+                                    <small class="d-block"><strong>Longitude:</strong> ${attendance.clock_in_longitude}</small>
+                                    ${attendance.distance_from_school ? `<small class="d-block"><strong>Jarak dari sekolah:</strong> ${attendance.distance_from_school}m</small>` : ''}
+                                </div>
+                                <div class="mt-2">
+                                    <a href="https://www.google.com/maps?q=${attendance.clock_in_latitude},${attendance.clock_in_longitude}" 
+                                       target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-map-marker-alt me-1"></i>Lihat di Google Maps
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    photosHtml += `
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                // Clock Out Photo and Location
+                if (attendance.clock_out_photo || attendance.clock_out_latitude) {
+                    photosHtml += `
+                        <div class="col-md-6">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h6 class="mb-0"><i class="fas fa-sign-out-alt me-2"></i>Clock Out</h6>
+                                </div>
+                                <div class="card-body">
+                    `;
+                    
+                    if (attendance.clock_out_photo) {
+                        photosHtml += `
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Foto:</label>
+                                <div class="text-center">
+                                    <img src="/storage/${attendance.clock_out_photo}" 
+                                         class="img-fluid rounded shadow-sm" 
+                                         style="max-height: 200px; cursor: pointer;"
+                                         onclick="window.open('/storage/${attendance.clock_out_photo}', '_blank')"
+                                         alt="Foto Clock Out">
+                                    <div class="mt-2">
+                                        <small class="text-muted">Klik untuk memperbesar</small>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    if (attendance.clock_out_latitude && attendance.clock_out_longitude) {
+                        photosHtml += `
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Lokasi:</label>
+                                <div class="bg-light p-2 rounded">
+                                    <small class="d-block"><strong>Latitude:</strong> ${attendance.clock_out_latitude}</small>
+                                    <small class="d-block"><strong>Longitude:</strong> ${attendance.clock_out_longitude}</small>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="https://www.google.com/maps?q=${attendance.clock_out_latitude},${attendance.clock_out_longitude}" 
+                                       target="_blank" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-map-marker-alt me-1"></i>Lihat di Google Maps
+                                    </a>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    photosHtml += `
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                content.innerHTML = `
+                    <!-- Student Info -->
+                    <div class="card border-primary mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <h6 class="mb-0"><i class="fas fa-user me-2"></i>Informasi Siswa</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Nama:</strong><br>
+                                    <span class="text-muted">${student.name}</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>NISN:</strong><br>
+                                    <span class="text-muted">${student.nisn}</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Kelas:</strong><br>
+                                    <span class="text-muted">${student.kelas || '-'}</span>
+                                </div>
+                            </div>
+                            <div class="row mt-2">
+                                <div class="col-md-4">
+                                    <strong>Tanggal:</strong><br>
+                                    <span class="text-muted">${new Date(attendance.date).toLocaleDateString('id-ID')}</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Clock In:</strong><br>
+                                    <span class="text-muted">${attendance.clock_in || '-'}</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Clock Out:</strong><br>
+                                    <span class="text-muted">${attendance.clock_out || '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Photos and Location -->
+                    <div class="row">
+                        ${photosHtml}
+                    </div>
+                    
+                    ${attendance.notes ? `
+                        <div class="card border-info mt-3">
+                            <div class="card-header bg-info text-white">
+                                <h6 class="mb-0"><i class="fas fa-sticky-note me-2"></i>Catatan</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-0">${attendance.notes}</p>
+                            </div>
+                        </div>
+                    ` : ''}
+                `;
+            } else {
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Gagal memuat detail absensi: ${data.message}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            content.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Terjadi kesalahan saat memuat detail absensi.
+                </div>
+            `;
+        });
+}
 </script>
 @endpush
+
+<!-- Attendance Detail Modal -->
+<div class="modal fade" id="attendanceDetailModal" tabindex="-1" aria-labelledby="attendanceDetailModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="attendanceDetailModalLabel">
+                    <i class="fas fa-info-circle me-2"></i>Detail Absensi
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="attendanceDetailContent">
+                    <div class="text-center">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Memuat detail absensi...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
