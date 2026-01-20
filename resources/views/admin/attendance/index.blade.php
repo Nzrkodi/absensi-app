@@ -1417,6 +1417,7 @@ function showAttendanceDetail(attendanceId) {
                     `;
                 }
                 
+                
                 content.innerHTML = `
                     <!-- Student Info -->
                     <div class="card border-primary mb-3">
@@ -1435,7 +1436,7 @@ function showAttendanceDetail(attendanceId) {
                                 </div>
                                 <div class="col-md-4">
                                     <strong>Kelas:</strong><br>
-                                    <span class="text-muted">${student.kelas || '-'}</span>
+                                    <span class="text-muted">${student.class?.name || '-'}</span>
                                 </div>
                             </div>
                             <div class="row mt-2">
