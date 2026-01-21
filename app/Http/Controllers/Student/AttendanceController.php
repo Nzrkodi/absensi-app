@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Attendance;
 use App\Models\Student;
 use App\Models\SchoolLocation;
+use App\Services\AttendancePhotoService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
@@ -103,13 +104,13 @@ class AttendanceController extends Controller
             ]);
         }
         
-        // Store photo
-        $photoPath = null;
-        if ($request->hasFile('photo')) {
-            $photo = $request->file('photo');
-            $filename = 'clock_in_' . $student->id . '_' . $date->format('Y-m-d') . '_' . time() . '.' . $photo->getClientOriginalExtension();
-            $photoPath = $photo->storeAs('attendance/photos', $filename, 'public');
-        }
+        // Store photo using semester-based service
+        $photoPath = AttendancePhotoService::storePhoto(
+            $request->file('photo'),
+            'clock_in',
+            $student->id,
+            $date
+        );
         
         // Determine status based on time
         $settings = \App\Models\Setting::getAttendanceSettings();
@@ -198,13 +199,13 @@ class AttendanceController extends Controller
         // For clock out, we don't strictly require being within school area
         // but we still log the location
         
-        // Store photo
-        $photoPath = null;
-        if ($request->hasFile('photo')) {
-            $photo = $request->file('photo');
-            $filename = 'clock_out_' . $student->id . '_' . $date->format('Y-m-d') . '_' . time() . '.' . $photo->getClientOriginalExtension();
-            $photoPath = $photo->storeAs('attendance/photos', $filename, 'public');
-        }
+        // Store photo using semester-based service
+        $photoPath = AttendancePhotoService::storePhoto(
+            $request->file('photo'),
+            'clock_out',
+            $student->id,
+            $date
+        );
         
         // Update attendance
         $attendance->update([

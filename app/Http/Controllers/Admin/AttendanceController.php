@@ -98,7 +98,7 @@ class AttendanceController extends Controller
             
             return response()->json([
                 'success' => false,
-                'message' => 'Data tidak valid: ' . implode(', ', array_flatten($e->errors()))
+                'message' => 'Data tidak valid: ' . implode(', ', collect($e->errors())->flatten()->toArray())
             ]);
         }
         
@@ -240,7 +240,7 @@ class AttendanceController extends Controller
             
             return response()->json([
                 'success' => false,
-                'message' => 'Data tidak valid: ' . implode(', ', array_flatten($e->errors()))
+                'message' => 'Data tidak valid: ' . implode(', ', collect($e->errors())->flatten()->toArray())
             ]);
         }
         
@@ -249,6 +249,12 @@ class AttendanceController extends Controller
             ->first();
 
         if (!$attendance || !$attendance->clock_in) {
+            Log::warning('Clock Out Failed - No Clock In', [
+                'student_id' => $student->id,
+                'date' => $date,
+                'attendance' => $attendance
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Siswa belum melakukan clock in'
@@ -256,6 +262,11 @@ class AttendanceController extends Controller
         }
 
         if ($attendance->clock_out) {
+            Log::warning('Clock Out Failed - Already Clocked Out', [
+                'student_id' => $student->id,
+                'attendance_id' => $attendance->id
+            ]);
+            
             return response()->json([
                 'success' => false,
                 'message' => 'Siswa sudah melakukan clock out hari ini'
@@ -311,20 +322,39 @@ class AttendanceController extends Controller
             $finalNotes = $notes ? ($attendance->notes ? $attendance->notes . ' | ' . $notes : $notes) : $attendance->notes;
         }
 
-        $attendance->update([
-            'clock_out' => $clockOutTime->format('H:i:s'),
-            'notes' => $finalNotes
-        ]);
+        try {
+            $attendance->update([
+                'clock_out' => $clockOutTime->format('H:i:s'),
+                'notes' => $finalNotes
+            ]);
+            
+            Log::info('Clock Out Success', [
+                'student_id' => $student->id,
+                'attendance_id' => $attendance->id,
+                'clock_out_time' => $clockOutTime->format('H:i:s')
+            ]);
 
-        return response()->json([
-            'success' => true,
-            'message' => $request->clock_mode === 'manual' 
-                ? "Clock out berhasil dengan waktu manual {$clockOutTime->format('H:i')}" 
-                : 'Clock out berhasil',
-            'data' => [
-                'clock_out' => $clockOutTime->format('H:i')
-            ]
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => $request->clock_mode === 'manual' 
+                    ? "Clock out berhasil dengan waktu manual {$clockOutTime->format('H:i')}" 
+                    : 'Clock out berhasil',
+                'data' => [
+                    'clock_out' => $clockOutTime->format('H:i')
+                ]
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Clock Out Database Error', [
+                'student_id' => $student->id,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat menyimpan data clock out'
+            ]);
+        }
     }
 
     public function updateNote(Request $request, Student $student)

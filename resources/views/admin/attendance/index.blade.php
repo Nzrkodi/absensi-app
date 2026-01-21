@@ -857,24 +857,95 @@ document.addEventListener('DOMContentLoaded', function() {
     // Manual Clock Out Modal handlers
     let currentClockOutStudentId = null;
     
-    document.querySelectorAll('.btn-clock-out').forEach(button => {
-        button.addEventListener('click', function() {
-            currentClockOutStudentId = this.getAttribute('data-student-id');
+    // Use event delegation for dynamically created clock-out buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('btn-clock-out') || e.target.closest('.btn-clock-out')) {
+            const button = e.target.classList.contains('btn-clock-out') ? e.target : e.target.closest('.btn-clock-out');
+            currentClockOutStudentId = button.getAttribute('data-student-id');
             
-            // Reset form
-            document.getElementById('manualClockOutForm').reset();
-            document.getElementById('currentTimeOut').checked = true;
-            document.getElementById('manualTimeOutInput').style.display = 'none';
-            document.getElementById('clockOutWarning').style.display = 'none';
-            
-            // Get student's clock in time for validation
-            const row = document.querySelector(`[data-student-id="${currentClockOutStudentId}"]`);
-            const clockInTime = row.querySelector('.clock-in-time').textContent.trim();
-            
-            // Store clock in time for validation
-            document.getElementById('manualClockOutForm').setAttribute('data-clock-in-time', clockInTime);
-        });
+            // Check if button has modal attributes (new modal system)
+            if (button.hasAttribute('data-bs-toggle') && button.getAttribute('data-bs-target') === '#manualClockOutModal') {
+                // Reset form for modal
+                document.getElementById('manualClockOutForm').reset();
+                document.getElementById('currentTimeOut').checked = true;
+                document.getElementById('manualTimeOutInput').style.display = 'none';
+                document.getElementById('clockOutWarning').style.display = 'none';
+                
+                // Get student's clock in time for validation
+                const row = document.querySelector(`[data-student-id="${currentClockOutStudentId}"]`);
+                const clockInTime = row.querySelector('.clock-in-time').textContent.trim();
+                
+                // Store clock in time for validation
+                document.getElementById('manualClockOutForm').setAttribute('data-clock-in-time', clockInTime);
+            } else {
+                // Legacy direct clock-out (fallback for existing buttons)
+                e.preventDefault();
+                performDirectClockOut(currentClockOutStudentId, button);
+            }
+        }
     });
+    
+    // Function for direct clock-out (without modal)
+    function performDirectClockOut(studentId, button) {
+        const originalText = button.innerHTML;
+        
+        // Show loading
+        button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status"></span> Loading...';
+        button.disabled = true;
+        
+        const formData = new FormData();
+        formData.append('clock_mode', 'current');
+        
+        fetch(`/admin/attendance/${studentId}/clock-out`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
+            },
+            body: formData,
+            signal: AbortSignal.timeout(30000) // 30 second timeout
+        })
+        .then(response => {
+            console.log('Clock-out response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Clock-out response data:', data);
+            if (data.success) {
+                // Update UI
+                const row = document.querySelector(`[data-student-id="${studentId}"]`);
+                row.querySelector('.clock-out-time').textContent = data.data.clock_out;
+                
+                // Remove clock out button
+                button.remove();
+                
+                // Disable note button
+                const noteButton = row.querySelector('.btn-note');
+                if (noteButton) {
+                    noteButton.className = 'btn btn-secondary btn-sm';
+                    noteButton.disabled = true;
+                    noteButton.title = 'Absensi sudah lengkap';
+                    noteButton.removeAttribute('data-bs-toggle');
+                    noteButton.removeAttribute('data-bs-target');
+                }
+                
+                showToast('success', data.message);
+            } else {
+                showToast('error', data.message || 'Clock out gagal');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        })
+        .catch(error => {
+            console.error('Clock-out error:', error);
+            showToast('error', 'Terjadi kesalahan saat clock out: ' + error.message);
+            button.innerHTML = originalText;
+            button.disabled = false;
+        });
+    }
     
     // Clock Out mode radio button handlers
     document.querySelectorAll('#manualClockOutModal input[name="clock_mode"]').forEach(radio => {
@@ -938,12 +1009,21 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/admin/attendance/${currentClockOutStudentId}/clock-out`, {
             method: 'POST',
             headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json'
             },
-            body: formData
+            body: formData,
+            signal: AbortSignal.timeout(30000) // 30 second timeout
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('Modal clock-out response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Modal clock-out response data:', data);
             if (data.success) {
                 // Update UI
                 const row = document.querySelector(`[data-student-id="${currentClockOutStudentId}"]`);
@@ -971,12 +1051,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 showToast('success', data.message);
             } else {
-                showToast('error', data.message);
+                showToast('error', data.message || 'Clock out gagal');
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            showToast('error', 'Terjadi kesalahan saat clock out');
+            console.error('Modal clock-out error:', error);
+            showToast('error', 'Terjadi kesalahan saat clock out: ' + error.message);
         })
         .finally(() => {
             submitBtn.disabled = false;
@@ -1013,7 +1093,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 row.querySelector('.clock-in-time').textContent = data.data.clock_in;
                 row.querySelector('.status-badge').innerHTML = data.data.status_badge;
                 
-                // Change button to clock out
+                // Change button to clock out (with modal)
                 const clockInBtn = row.querySelector('.btn-clock-in');
                 clockInBtn.className = 'btn btn-warning btn-sm btn-clock-out';
                 clockInBtn.innerHTML = '<i class="fas fa-sign-out-alt"></i> Clock Out';

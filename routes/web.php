@@ -115,6 +115,11 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         
         // School Locations management (admin only)
         Route::resource('school-locations', \App\Http\Controllers\Admin\SchoolLocationController::class);
+        
+        // Storage management (admin only)
+        Route::get('storage/attendance-photos', [\App\Http\Controllers\Admin\StorageController::class, 'attendancePhotos'])->name('storage.attendance-photos');
+        Route::post('storage/cleanup', [\App\Http\Controllers\Admin\StorageController::class, 'cleanupPhotos'])->name('storage.cleanup');
+        Route::get('storage/stats', [\App\Http\Controllers\Admin\StorageController::class, 'getStorageStats'])->name('storage.stats');
     });
 });
 

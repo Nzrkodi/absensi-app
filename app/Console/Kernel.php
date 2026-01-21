@@ -38,6 +38,11 @@ class Kernel extends ConsoleKernel
         $schedule->command('holidays:sync --all')
                  ->monthlyOn(1, '02:00')
                  ->timezone('Asia/Makassar');
+        
+        // Cleanup old attendance photos every month (first day at 3 AM)
+        $schedule->command('attendance:cleanup-photos --months=6')
+                 ->monthlyOn(1, '03:00')
+                 ->timezone('Asia/Makassar');
     }
 
     /**
