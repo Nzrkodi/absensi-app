@@ -715,7 +715,7 @@
 
             <!-- Page Content -->
             <main class="p-4">
-                {{-- @if(session('success'))
+                @if(session('success'))
                     <script>
                         document.addEventListener('DOMContentLoaded', function() {
                             Swal.fire({
@@ -730,7 +730,7 @@
                             });
                         });
                     </script>
-                @endif --}}
+                @endif
 
                 @if(session('error'))
                     <script>

@@ -549,7 +549,7 @@ class AttendanceController extends Controller
      */
     public function getAttendanceDetail(Attendance $attendance)
     {
-        $attendance->load('student');
+        $attendance->load('student.class');
         
         return response()->json([
             'success' => true,

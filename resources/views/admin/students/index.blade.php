@@ -506,13 +506,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const overlay = document.createElement('div');
         overlay.id = 'loadingOverlay';
         overlay.innerHTML = `
-            <div class="d-flex justify-content-center align-items-center h-100">
-                <div class="text-center">
-                    <div class="spinner-border text-primary mb-3" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="text-muted">${message}</p>
+            <div class="loading-content">
+                <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+                    <span class="visually-hidden">Loading...</span>
                 </div>
+                <p class="mt-3 mb-0 text-muted">${message}</p>
             </div>
         `;
         overlay.style.cssText = `
@@ -524,6 +522,12 @@ document.addEventListener('DOMContentLoaded', function() {
             background: rgba(255, 255, 255, 0.9);
             z-index: 9999;
             display: flex;
+            justify-content: center;
+            align-items: center;
+        `;
+        const content = overlay.querySelector('.loading-content');
+        content.style.cssText = `
+            text-align: center;
         `;
         document.body.appendChild(overlay);
     }
