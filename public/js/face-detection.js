@@ -46,28 +46,42 @@ class FaceDetectionCamera {
         try {
             console.log('Initializing face detection...');
             
-            // Check if MediaPipe is available
-            if (typeof window !== 'undefined' && window.FaceDetection) {
-                // Use already loaded MediaPipe
-                this.setupFaceDetection(window.FaceDetection);
-                return;
+            // Try multiple CDN sources for MediaPipe
+            const cdnSources = [
+                'https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/face_detection.js',
+                'https://unpkg.com/@mediapipe/face_detection@0.4/face_detection.js'
+            ];
+            
+            for (const cdnUrl of cdnSources) {
+                try {
+                    console.log(`Trying to load MediaPipe from: ${cdnUrl}`);
+                    
+                    const loadTimeout = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error('MediaPipe load timeout')), 5000);
+                    });
+                    
+                    const loadMediaPipe = import(cdnUrl)
+                        .then(({ FaceDetection }) => {
+                            console.log('MediaPipe loaded successfully from:', cdnUrl);
+                            this.setupFaceDetection(FaceDetection);
+                            return true;
+                        });
+                    
+                    await Promise.race([loadMediaPipe, loadTimeout]);
+                    return; // Success, exit function
+                    
+                } catch (error) {
+                    console.warn(`Failed to load from ${cdnUrl}:`, error);
+                    continue; // Try next CDN
+                }
             }
             
-            // Try to load MediaPipe with timeout
-            const loadTimeout = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error('MediaPipe load timeout')), 3000);
-            });
-            
-            const loadMediaPipe = import('https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/face_detection.js')
-                .then(({ FaceDetection }) => {
-                    this.setupFaceDetection(FaceDetection);
-                });
-            
-            await Promise.race([loadMediaPipe, loadTimeout]);
+            // If all CDNs fail, try local fallback
+            throw new Error('All MediaPipe CDN sources failed');
             
         } catch (error) {
-            console.warn('Face detection initialization failed:', error);
-            // Set to null so fallback will be used
+            console.error('Face detection initialization failed:', error);
+            // Set to null so system knows face detection is not available
             this.faceDetection = null;
         }
     }

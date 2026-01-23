@@ -155,17 +155,18 @@
                         Aksi Absensi
                     </h6>
                     
-                    <!-- Take Photo Button -->
-                    <button type="button" class="btn btn-outline-primary btn-lg w-100 mb-3" onclick="attendanceMobile.capturePhoto()">
-                        <i class="fas fa-camera me-2"></i>
-                        Ambil Foto Selfie
+                    <!-- Take Photo Button - MANDATORY Face Detection -->
+                    <button type="button" class="btn btn-primary btn-lg w-100 mb-3" onclick="attendanceMobile.capturePhoto()">
+                        <i class="fas fa-user-check me-2"></i>
+                        Ambil Foto dengan Verifikasi Wajah
                     </button>
                     
-                    <!-- Debug Button (for testing) -->
-                    <button type="button" class="btn btn-outline-info btn-sm w-100 mb-3" onclick="attendanceMobile.debugCamera()" style="font-size: 0.8rem;">
-                        <i class="fas fa-bug me-2"></i>
-                        Test Kamera & Permission
-                    </button>
+                    <div class="alert alert-info border-0 mb-3">
+                        <small>
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Wajib:</strong> Sistem akan memverifikasi wajah Anda sebelum foto dapat digunakan untuk absensi.
+                        </small>
+                    </div>
                     
                     <div class="row g-2">
                         @if(!$attendance || !$attendance->clock_in)
@@ -388,10 +389,20 @@ async function clockIn() {
     formData.append('latitude', attendanceMobile.currentPosition.latitude);
     formData.append('longitude', attendanceMobile.currentPosition.longitude);
     
-    // Add face validation flag if photo has face validation data
+    // Add face validation flag - MANDATORY for attendance
     if (attendanceMobile.photoBlob && attendanceMobile.photoBlob.faceValidation) {
         formData.append('face_validation', 'true');
         console.log('Sending face validation data:', attendanceMobile.photoBlob.faceValidation);
+    } else {
+        // If no face validation, reject the request
+        loadingModal.hide();
+        Swal.fire({
+            icon: 'error',
+            title: 'Verifikasi Wajah Diperlukan',
+            text: 'Foto harus diambil dengan verifikasi wajah. Silakan ambil foto ulang menggunakan sistem deteksi wajah.',
+            confirmButtonText: 'OK'
+        });
+        return;
     }
     
     try {
@@ -469,10 +480,20 @@ async function clockOut() {
     formData.append('latitude', attendanceMobile.currentPosition.latitude);
     formData.append('longitude', attendanceMobile.currentPosition.longitude);
     
-    // Add face validation flag if photo has face validation data
+    // Add face validation flag - MANDATORY for attendance
     if (attendanceMobile.photoBlob && attendanceMobile.photoBlob.faceValidation) {
         formData.append('face_validation', 'true');
         console.log('Sending face validation data for clock out:', attendanceMobile.photoBlob.faceValidation);
+    } else {
+        // If no face validation, reject the request
+        loadingModal.hide();
+        Swal.fire({
+            icon: 'error',
+            title: 'Verifikasi Wajah Diperlukan',
+            text: 'Foto harus diambil dengan verifikasi wajah. Silakan ambil foto ulang menggunakan sistem deteksi wajah.',
+            confirmButtonText: 'OK'
+        });
+        return;
     }
     
     try {

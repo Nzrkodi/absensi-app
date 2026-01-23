@@ -273,12 +273,24 @@ class AttendanceMobile {
                         
                         <!-- Fallback Message -->
                         <div id="faceDetectionFailed" style="display: none;" class="text-center p-5">
-                            <div class="alert alert-warning border-0">
+                            <div class="alert alert-danger border-0">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>Face Detection Tidak Tersedia</strong>
-                                <p class="mb-3">Sistem deteksi wajah tidak dapat dimuat. Silakan gunakan kamera manual atau coba refresh halaman.</p>
-                                <button class="btn btn-primary" onclick="attendanceMobile.showSimpleCameraFallback()">
-                                    <i class="fas fa-camera me-2"></i>Gunakan Kamera Manual
+                                <strong>Face Detection Diperlukan untuk Absensi</strong>
+                                <p class="mb-3">Sistem deteksi wajah tidak dapat dimuat. Absensi memerlukan verifikasi wajah untuk keamanan.</p>
+                                <div class="mb-3">
+                                    <small class="text-muted">
+                                        <strong>Solusi:</strong><br>
+                                        • Pastikan koneksi internet stabil<br>
+                                        • Refresh halaman dan coba lagi<br>
+                                        • Gunakan browser Chrome/Firefox terbaru<br>
+                                        • Hubungi admin jika masalah berlanjut
+                                    </small>
+                                </div>
+                                <button class="btn btn-primary me-2" onclick="location.reload()">
+                                    <i class="fas fa-redo me-2"></i>Refresh Halaman
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="attendanceMobile.retryFaceDetection()">
+                                    <i class="fas fa-sync me-2"></i>Coba Lagi
                                 </button>
                             </div>
                         </div>
@@ -757,13 +769,29 @@ class AttendanceMobile {
         }
     }
 
-    // Fallback to simple camera if face detection fails
-    showSimpleCameraFallback() {
-        // Close current modal
-        this.closeFaceDetectionModal();
+    // Retry face detection initialization
+    async retryFaceDetection() {
+        console.log('Retrying face detection initialization...');
         
-        // Show simple camera modal
-        this.showSimpleCameraModal();
+        const modal = this.currentModal;
+        if (!modal) return;
+        
+        // Show loading again
+        modal.querySelector('#faceDetectionFailed').style.display = 'none';
+        modal.querySelector('#faceLoading').style.display = 'block';
+        
+        // Recreate face camera instance
+        this.faceCamera = new FaceDetectionCamera();
+        
+        // Wait a bit then try initialization
+        setTimeout(() => {
+            this.initializeMandatoryFaceDetection(modal);
+        }, 1000);
+    }
+
+    // Remove fallback to simple camera - face detection is MANDATORY
+    showSimpleCameraFallback() {
+        alert('Absensi memerlukan verifikasi wajah. Silakan refresh halaman atau hubungi admin jika masalah berlanjut.');
     }
 
     // Tampilkan modal kamera dengan face detection
