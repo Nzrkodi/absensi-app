@@ -256,6 +256,7 @@
 
 @push('scripts')
 <script src="{{ asset('js/face-detection.js') }}?v={{ time() }}"></script>
+<script src="{{ asset('js/simple-face-detection.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/attendance-mobile.js') }}?v={{ time() }}"></script>
 
 <style>

@@ -333,41 +333,114 @@ class AttendanceMobile {
             
             // Set timeout for face detection initialization
             const initTimeout = setTimeout(() => {
-                console.log('Face detection initialization timeout');
-                loading.style.display = 'none';
-                failedDiv.style.display = 'block';
-            }, 10000); // 10 second timeout
+                console.log('Face detection initialization timeout, trying simple detection...');
+                this.trySimpleFaceDetection(modal);
+            }, 8000); // 8 second timeout
             
-            // Ensure face detection is initialized
+            // Try MediaPipe first
             const faceDetectionReady = await this.faceCamera.ensureInitialized();
             
-            if (!faceDetectionReady) {
-                throw new Error('Face detection not available');
+            if (faceDetectionReady) {
+                // MediaPipe is ready
+                await this.faceCamera.startCamera(video, canvas);
+                clearTimeout(initTimeout);
+                
+                console.log('MediaPipe face detection started successfully');
+                
+                // Hide loading, show camera
+                loading.style.display = 'none';
+                container.style.display = 'block';
+                
+                // Setup event listeners
+                this.setupFaceDetectionEventListeners(modal);
+                
+                // Start monitoring face detection
+                this.monitorMandatoryFaceDetection(modal);
+                
+            } else {
+                // MediaPipe failed, try simple detection
+                clearTimeout(initTimeout);
+                console.log('MediaPipe not available, trying simple face detection...');
+                this.trySimpleFaceDetection(modal);
             }
             
-            // Start camera with face detection
-            await this.faceCamera.startCamera(video, canvas);
+        } catch (error) {
+            console.error('Face detection initialization error:', error);
             clearTimeout(initTimeout);
             
-            console.log('Mandatory face detection camera started successfully');
+            // Try simple face detection as fallback
+            this.trySimpleFaceDetection(modal);
+        }
+    }
+
+    async trySimpleFaceDetection(modal) {
+        console.log('Trying simple face detection...');
+        
+        try {
+            // Load simple face detection
+            if (!window.SimpleFaceDetection) {
+                console.error('SimpleFaceDetection not available');
+                throw new Error('Simple face detection not loaded');
+            }
+            
+            const video = modal.querySelector('#faceVideo');
+            const canvas = modal.querySelector('#faceCanvas');
+            const loading = modal.querySelector('#faceLoading');
+            const container = modal.querySelector('#faceDetectionContainer');
+            
+            // Create simple face detector
+            this.simpleFaceDetector = new SimpleFaceDetection();
+            
+            // Start camera
+            const constraints = {
+                video: {
+                    facingMode: 'user',
+                    width: { ideal: 720, max: 1280 },
+                    height: { ideal: 1280, max: 1920 }
+                },
+                audio: false
+            };
+            
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            video.srcObject = stream;
+            this.currentStream = stream;
+            
+            // Wait for video to load
+            await new Promise((resolve, reject) => {
+                video.onloadedmetadata = () => {
+                    // Set canvas size
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    resolve();
+                };
+                video.onerror = reject;
+                setTimeout(() => reject(new Error('Video load timeout')), 10000);
+            });
+            
+            // Start simple face detection
+            await this.simpleFaceDetector.startDetection(video, canvas);
             
             // Hide loading, show camera
             loading.style.display = 'none';
             container.style.display = 'block';
             
-            // Setup event listeners
-            this.setupFaceDetectionEventListeners(modal);
+            // Setup event listeners for simple detection
+            this.setupSimpleFaceDetectionEventListeners(modal);
             
-            // Start monitoring face detection
-            this.monitorMandatoryFaceDetection(modal);
+            // Monitor simple face detection
+            this.monitorSimpleFaceDetection(modal);
+            
+            console.log('Simple face detection started successfully');
             
         } catch (error) {
-            console.error('Mandatory face detection initialization error:', error);
-            clearTimeout(initTimeout);
+            console.error('Simple face detection failed:', error);
             
-            // Show fallback option
+            // Show final error
+            const loading = modal.querySelector('#faceLoading');
+            const failedDiv = modal.querySelector('#faceDetectionFailed');
+            
             loading.style.display = 'none';
-            modal.querySelector('#faceDetectionFailed').style.display = 'block';
+            failedDiv.style.display = 'block';
         }
     }
 
@@ -759,8 +832,21 @@ class AttendanceMobile {
     }
 
     closeFaceDetectionModal() {
+        // Stop MediaPipe face detection
         if (this.faceCamera) {
             this.faceCamera.stopCamera();
+        }
+        
+        // Stop simple face detection
+        if (this.simpleFaceDetector) {
+            this.simpleFaceDetector.stopDetection();
+            this.simpleFaceDetector = null;
+        }
+        
+        // Stop camera stream
+        if (this.currentStream) {
+            this.currentStream.getTracks().forEach(track => track.stop());
+            this.currentStream = null;
         }
         
         if (this.currentModal) {
@@ -771,6 +857,143 @@ class AttendanceMobile {
 
     // Retry face detection initialization
     async retryFaceDetection() {
+        console.log('Retrying face detection initialization...');
+        
+        const modal = this.currentModal;
+        if (!modal) return;
+        
+        // Show loading again
+        modal.querySelector('#faceDetectionFailed').style.display = 'none';
+        modal.querySelector('#faceLoading').style.display = 'block';
+        
+        // Stop any existing detection
+        if (this.simpleFaceDetector) {
+            this.simpleFaceDetector.stopDetection();
+            this.simpleFaceDetector = null;
+        }
+        
+        if (this.currentStream) {
+            this.currentStream.getTracks().forEach(track => track.stop());
+            this.currentStream = null;
+        }
+        
+        // Recreate face camera instance
+        this.faceCamera = new FaceDetectionCamera();
+        
+        // Wait a bit then try initialization
+        setTimeout(() => {
+            this.initializeMandatoryFaceDetection(modal);
+        }, 1000);
+    }
+
+    // Remove fallback to simple camera - face detection is MANDATORY
+    showSimpleCameraFallback() {
+        alert('Absensi memerlukan verifikasi wajah. Silakan refresh halaman atau hubungi admin jika masalah berlanjut.');
+    }
+
+    setupSimpleFaceDetectionEventListeners(modal) {
+        const captureBtn = modal.querySelector('#faceDetectionCaptureBtn');
+        const retakeBtn = modal.querySelector('#faceRetakeBtn');
+        const useBtn = modal.querySelector('#faceUseBtn');
+        
+        captureBtn.onclick = () => this.takeSimpleFacePhoto(modal);
+        retakeBtn.onclick = () => this.retakeSimpleFacePhoto(modal);
+        useBtn.onclick = () => this.useSimpleFacePhoto(modal);
+    }
+
+    monitorSimpleFaceDetection(modal) {
+        const captureBtn = modal.querySelector('#faceDetectionCaptureBtn');
+        const captureButtonText = modal.querySelector('#captureButtonText');
+        
+        const checkSimpleFaceDetection = () => {
+            if (!this.simpleFaceDetector || !document.body.contains(modal)) {
+                return; // Stop monitoring if modal is closed
+            }
+            
+            const faceDetected = this.simpleFaceDetector.isFaceDetected();
+            
+            if (faceDetected) {
+                // Face detected and valid
+                captureBtn.disabled = false;
+                captureBtn.className = 'btn btn-success';
+                captureButtonText.textContent = 'Ambil Foto Sekarang!';
+            } else {
+                // No face detected or not valid
+                captureBtn.disabled = true;
+                captureBtn.className = 'btn btn-primary';
+                captureButtonText.textContent = 'Menunggu Validasi...';
+            }
+            
+            // Continue monitoring
+            setTimeout(checkSimpleFaceDetection, 300); // Check every 300ms
+        };
+        
+        // Start monitoring after a short delay
+        setTimeout(checkSimpleFaceDetection, 1000);
+    }
+
+    async takeSimpleFacePhoto(modal) {
+        try {
+            console.log('Taking simple face photo...');
+            
+            // Check face detection
+            if (!this.simpleFaceDetector.isFaceDetected()) {
+                alert('Pastikan wajah terdeteksi dengan baik sebelum mengambil foto.');
+                return;
+            }
+            
+            // Capture photo with simple validation
+            this.photoBlob = await this.simpleFaceDetector.captureValidatedPhoto();
+            
+            if (!this.photoBlob) {
+                alert('Gagal mengambil foto. Silakan coba lagi.');
+                return;
+            }
+            
+            // Show preview
+            const preview = modal.querySelector('#facePhotoPreview');
+            const img = modal.querySelector('#faceCapturedPhoto');
+            img.src = URL.createObjectURL(this.photoBlob);
+            
+            modal.querySelector('#faceDetectionContainer').style.display = 'none';
+            preview.style.display = 'block';
+            
+            // Update buttons
+            modal.querySelector('#faceDetectionCaptureBtn').style.display = 'none';
+            modal.querySelector('#faceRetakeBtn').style.display = 'inline-block';
+            modal.querySelector('#faceUseBtn').style.display = 'inline-block';
+            
+            console.log('Simple face photo captured successfully');
+            
+        } catch (error) {
+            console.error('Simple face photo capture error:', error);
+            alert('Gagal mengambil foto wajah. Silakan coba lagi.');
+        }
+    }
+
+    retakeSimpleFacePhoto(modal) {
+        // Show camera again
+        modal.querySelector('#faceDetectionContainer').style.display = 'block';
+        modal.querySelector('#facePhotoPreview').style.display = 'none';
+        
+        // Reset buttons
+        modal.querySelector('#faceDetectionCaptureBtn').style.display = 'inline-block';
+        modal.querySelector('#faceRetakeBtn').style.display = 'none';
+        modal.querySelector('#faceUseBtn').style.display = 'none';
+        
+        // Restart simple face detection monitoring
+        this.monitorSimpleFaceDetection(modal);
+    }
+
+    useSimpleFacePhoto(modal) {
+        // Update UI to show photo is captured with face validation
+        const photoStatus = document.getElementById('photoStatus');
+        if (photoStatus) {
+            photoStatus.innerHTML = '<i class="fas fa-user-check text-success me-2"></i>Foto wajah tervalidasi berhasil diambil';
+        }
+        
+        this.closeFaceDetectionModal();
+    }
         console.log('Retrying face detection initialization...');
         
         const modal = this.currentModal;
