@@ -161,6 +161,12 @@
                         Ambil Foto Selfie
                     </button>
                     
+                    <!-- Debug Button (for testing) -->
+                    <button type="button" class="btn btn-outline-info btn-sm w-100 mb-3" onclick="attendanceMobile.debugCamera()" style="font-size: 0.8rem;">
+                        <i class="fas fa-bug me-2"></i>
+                        Test Kamera & Permission
+                    </button>
+                    
                     <div class="row g-2">
                         @if(!$attendance || !$attendance->clock_in)
                         <!-- Clock In Button -->

@@ -173,17 +173,278 @@ class AttendanceMobile {
     // Ambil foto dari kamera dengan face detection
     async capturePhoto() {
         try {
-            // Initialize face detection camera if not already done
-            if (!this.faceCamera) {
-                this.faceCamera = new FaceDetectionCamera();
-            }
-
-            // Show enhanced camera modal with face detection
-            this.showEnhancedCameraModal();
+            console.log('Starting photo capture process...');
+            
+            // For now, skip face detection and go directly to basic camera
+            // TODO: Re-enable face detection after basic camera is working
+            this.showSimpleCameraModal();
             
         } catch (error) {
             console.error('Camera error:', error);
-            alert('Tidak dapat mengakses kamera. Pastikan izin kamera sudah diberikan.');
+            
+            // Show user-friendly error message
+            if (error.name === 'NotAllowedError') {
+                alert('Izin kamera ditolak. Silakan berikan izin kamera di pengaturan browser dan coba lagi.');
+            } else if (error.name === 'NotFoundError') {
+                alert('Kamera tidak ditemukan. Pastikan device Anda memiliki kamera.');
+            } else {
+                alert('Tidak dapat mengakses kamera. Pastikan izin kamera sudah diberikan dan tidak ada aplikasi lain yang menggunakan kamera.');
+            }
+        }
+    }
+
+    // Simple camera modal without face detection (for testing)
+    showSimpleCameraModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal fade show';
+        modal.style.display = 'block';
+        modal.style.zIndex = '9999';
+        modal.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-camera me-2"></i>
+                            Ambil Foto Absensi
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" onclick="attendanceMobile.closeSimpleModal()"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <!-- Loading State -->
+                        <div id="simpleLoading" class="text-center p-5">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted">Memulai kamera...</p>
+                        </div>
+                        
+                        <!-- Camera Container -->
+                        <div id="simpleCameraContainer" style="display: none; position: relative;">
+                            <video id="simpleCameraVideo" class="w-100" autoplay muted playsinline style="transform: scaleX(-1);"></video>
+                            
+                            <!-- Camera Controls Overlay -->
+                            <div class="position-absolute top-0 end-0 p-3" style="z-index: 10;">
+                                <button type="button" class="btn btn-sm btn-outline-light" onclick="attendanceMobile.toggleMirror()" title="Toggle Mirror Mode">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                            
+                            <!-- Info Overlay -->
+                            <div class="position-absolute bottom-0 start-0 end-0 p-3" style="z-index: 10;">
+                                <div class="bg-dark bg-opacity-75 text-white px-3 py-2 rounded text-center">
+                                    <small><i class="fas fa-info-circle me-1"></i>Klik tombol <i class="fas fa-sync-alt"></i> untuk mengubah mode mirror</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Photo Preview -->
+                        <div id="simplePhotoPreview" style="display: none;" class="text-center p-3">
+                            <img id="simpleCapturedPhoto" class="img-fluid rounded shadow">
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-check-circle text-success me-1"></i>
+                                    Foto hasil akan tersimpan dalam orientasi normal (tidak mirror)
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="attendanceMobile.closeSimpleModal()">
+                            <i class="fas fa-times me-2"></i>Batal
+                        </button>
+                        <button type="button" id="simpleCaptureBtn" class="btn btn-primary" disabled>
+                            <i class="fas fa-camera me-2"></i>Ambil Foto
+                        </button>
+                        <button type="button" id="simpleRetakeBtn" class="btn btn-warning" style="display: none;">
+                            <i class="fas fa-redo me-2"></i>Ambil Ulang
+                        </button>
+                        <button type="button" id="simpleUseBtn" class="btn btn-success" style="display: none;">
+                            <i class="fas fa-check me-2"></i>Gunakan Foto
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        this.currentModal = modal;
+        
+        // Initialize simple camera
+        this.initializeSimpleCamera(modal);
+    }
+
+    async initializeSimpleCamera(modal) {
+        console.log('Initializing simple camera...');
+        
+        try {
+            const video = modal.querySelector('#simpleCameraVideo');
+            const loading = modal.querySelector('#simpleLoading');
+            const cameraContainer = modal.querySelector('#simpleCameraContainer');
+            const captureBtn = modal.querySelector('#simpleCaptureBtn');
+            
+            // Simple camera constraints
+            const constraints = {
+                video: {
+                    facingMode: 'user',
+                    width: { ideal: 720, max: 1280 },
+                    height: { ideal: 1280, max: 1920 }
+                },
+                audio: false
+            };
+            
+            console.log('Requesting camera access...');
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            
+            video.srcObject = stream;
+            this.currentStream = stream;
+            
+            // Wait for video to load
+            await new Promise((resolve, reject) => {
+                video.onloadedmetadata = () => {
+                    console.log('Video loaded successfully');
+                    resolve();
+                };
+                video.onerror = (error) => {
+                    console.error('Video load error:', error);
+                    reject(error);
+                };
+                
+                setTimeout(() => {
+                    reject(new Error('Video load timeout'));
+                }, 10000);
+            });
+            
+            // Hide loading, show camera
+            loading.style.display = 'none';
+            cameraContainer.style.display = 'block';
+            
+            // Enable capture button
+            captureBtn.disabled = false;
+            captureBtn.onclick = () => this.takeSimplePhoto(modal, video);
+            
+            console.log('Simple camera initialized successfully');
+            
+        } catch (error) {
+            console.error('Simple camera error:', error);
+            
+            const loading = modal.querySelector('#simpleLoading');
+            let errorMessage = 'Tidak dapat mengakses kamera.';
+            
+            if (error.name === 'NotAllowedError') {
+                errorMessage = 'Izin kamera ditolak. Silakan berikan izin kamera dan coba lagi.';
+            } else if (error.name === 'NotFoundError') {
+                errorMessage = 'Kamera tidak ditemukan. Pastikan device memiliki kamera.';
+            } else if (error.name === 'NotReadableError') {
+                errorMessage = 'Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain dan coba lagi.';
+            }
+            
+            loading.innerHTML = `
+                <div class="alert alert-danger border-0">
+                    <i class="fas fa-times-circle me-2"></i>
+                    <strong>Error:</strong> ${errorMessage}
+                </div>
+                <button class="btn btn-primary" onclick="attendanceMobile.initializeSimpleCamera(attendanceMobile.currentModal)">
+                    <i class="fas fa-redo me-2"></i>Coba Lagi
+                </button>
+            `;
+        }
+    }
+
+    takeSimplePhoto(modal, video) {
+        try {
+            console.log('Taking simple photo...');
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Check if video is mirrored
+            const isVideoMirrored = video.style.transform.includes('scaleX(-1)');
+            
+            if (isVideoMirrored) {
+                // If video is mirrored, flip the canvas to get normal photo
+                ctx.scale(-1, 1);
+                ctx.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+            } else {
+                // If video is normal, draw normally
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            }
+            
+            canvas.toBlob((blob) => {
+                this.photoBlob = blob;
+                
+                // Show preview
+                const preview = modal.querySelector('#simplePhotoPreview');
+                const img = modal.querySelector('#simpleCapturedPhoto');
+                img.src = URL.createObjectURL(blob);
+                
+                modal.querySelector('#simpleCameraContainer').style.display = 'none';
+                preview.style.display = 'block';
+                
+                // Update buttons
+                modal.querySelector('#simpleCaptureBtn').style.display = 'none';
+                modal.querySelector('#simpleRetakeBtn').style.display = 'inline-block';
+                modal.querySelector('#simpleUseBtn').style.display = 'inline-block';
+                
+                // Setup button events
+                modal.querySelector('#simpleRetakeBtn').onclick = () => this.retakeSimplePhoto(modal);
+                modal.querySelector('#simpleUseBtn').onclick = () => this.useSimplePhoto(modal);
+                
+                console.log('Photo captured successfully');
+                
+            }, 'image/jpeg', 0.9);
+            
+        } catch (error) {
+            console.error('Photo capture error:', error);
+            alert('Gagal mengambil foto. Silakan coba lagi.');
+        }
+    }
+
+    retakeSimplePhoto(modal) {
+        // Show camera again
+        modal.querySelector('#simpleCameraContainer').style.display = 'block';
+        modal.querySelector('#simplePhotoPreview').style.display = 'none';
+        
+        // Reset buttons
+        modal.querySelector('#simpleCaptureBtn').style.display = 'inline-block';
+        modal.querySelector('#simpleRetakeBtn').style.display = 'none';
+        modal.querySelector('#simpleUseBtn').style.display = 'none';
+    }
+
+    useSimplePhoto(modal) {
+        // Update UI to show photo is captured
+        const photoStatus = document.getElementById('photoStatus');
+        if (photoStatus) {
+            photoStatus.innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Foto berhasil diambil';
+        }
+        
+        this.closeSimpleModal();
+    }
+
+    closeSimpleModal() {
+        if (this.currentStream) {
+            this.currentStream.getTracks().forEach(track => track.stop());
+            this.currentStream = null;
+        }
+        
+        if (this.currentModal) {
+            this.currentModal.remove();
+            this.currentModal = null;
+        }
+    }
+
+    // Toggle mirror effect on camera preview
+    toggleMirror() {
+        const video = document.getElementById('simpleCameraVideo');
+        if (video) {
+            const currentTransform = video.style.transform;
+            if (currentTransform.includes('scaleX(-1)')) {
+                video.style.transform = 'scaleX(1)'; // Normal view
+            } else {
+                video.style.transform = 'scaleX(-1)'; // Mirror view (default for selfie)
+            }
         }
     }
 
@@ -266,29 +527,55 @@ class AttendanceMobile {
     }
 
     async initializeEnhancedCamera(modal) {
+        console.log('Initializing enhanced camera...');
+        
+        const video = modal.querySelector('#cameraVideo');
+        const canvas = modal.querySelector('#cameraCanvas');
+        const loading = modal.querySelector('#cameraLoading');
+        const cameraContainer = modal.querySelector('#cameraContainer');
+        
         try {
-            const video = modal.querySelector('#cameraVideo');
-            const canvas = modal.querySelector('#cameraCanvas');
-            const loading = modal.querySelector('#cameraLoading');
-            const cameraContainer = modal.querySelector('#cameraContainer');
+            // Add timeout for the entire initialization process
+            const initTimeout = setTimeout(() => {
+                console.log('Enhanced camera initialization timeout, falling back to basic camera');
+                this.showBasicCameraFallback(modal);
+            }, 8000); // 8 second timeout
             
-            // Start camera with face detection
-            await this.faceCamera.startCamera(video, canvas);
+            // Check if face camera is available and try to start it
+            if (this.faceCamera) {
+                console.log('Attempting to start face detection camera...');
+                
+                try {
+                    await this.faceCamera.startCamera(video, canvas);
+                    clearTimeout(initTimeout);
+                    
+                    console.log('Face detection camera started successfully');
+                    
+                    // Hide loading, show camera
+                    loading.style.display = 'none';
+                    cameraContainer.style.display = 'block';
+                    
+                    // Setup event listeners
+                    this.setupCameraEventListeners(modal);
+                    
+                    // Monitor face detection status
+                    this.monitorFaceDetection(modal);
+                    
+                    return; // Success, exit function
+                    
+                } catch (cameraError) {
+                    console.error('Face detection camera failed:', cameraError);
+                    clearTimeout(initTimeout);
+                    // Fall through to basic camera
+                }
+            }
             
-            // Hide loading, show camera
-            loading.style.display = 'none';
-            cameraContainer.style.display = 'block';
-            
-            // Setup event listeners
-            this.setupCameraEventListeners(modal);
-            
-            // Monitor face detection status
-            this.monitorFaceDetection(modal);
+            // If we reach here, face detection failed or not available
+            console.log('Face detection not available, using basic camera');
+            this.showBasicCameraFallback(modal);
             
         } catch (error) {
             console.error('Enhanced camera initialization error:', error);
-            
-            // Fallback to basic camera
             this.showBasicCameraFallback(modal);
         }
     }
@@ -384,6 +671,73 @@ class AttendanceMobile {
         this.closeCameraModal();
     }
 
+    // Debug function to test camera access
+    async debugCamera() {
+        console.log('=== CAMERA DEBUG START ===');
+        
+        try {
+            // Test 1: Check if getUserMedia is available
+            console.log('1. getUserMedia available:', !!navigator.mediaDevices?.getUserMedia);
+            
+            // Test 2: Check camera permissions
+            if (navigator.permissions) {
+                const permission = await navigator.permissions.query({ name: 'camera' });
+                console.log('2. Camera permission:', permission.state);
+            }
+            
+            // Test 3: Try to get camera devices
+            if (navigator.mediaDevices?.enumerateDevices) {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const cameras = devices.filter(device => device.kind === 'videoinput');
+                console.log('3. Available cameras:', cameras.length);
+                cameras.forEach((camera, index) => {
+                    console.log(`   Camera ${index + 1}:`, camera.label || 'Unknown Camera');
+                });
+            }
+            
+            // Test 4: Try basic camera access
+            console.log('4. Testing basic camera access...');
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'user' }
+            });
+            console.log('4. Basic camera access: SUCCESS');
+            
+            // Stop the test stream
+            stream.getTracks().forEach(track => track.stop());
+            
+            // Test 5: Check MediaPipe availability
+            console.log('5. Testing MediaPipe availability...');
+            try {
+                const response = await fetch('https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/face_detection.js');
+                console.log('5. MediaPipe CDN status:', response.status);
+            } catch (e) {
+                console.log('5. MediaPipe CDN error:', e.message);
+            }
+            
+            console.log('=== CAMERA DEBUG SUCCESS ===');
+            alert('✅ Debug berhasil! Cek console untuk detail. Kamera seharusnya bisa digunakan.');
+            
+        } catch (error) {
+            console.error('=== CAMERA DEBUG ERROR ===');
+            console.error('Error details:', error);
+            console.error('Error name:', error.name);
+            console.error('Error message:', error.message);
+            
+            let errorMsg = 'Debug gagal: ';
+            if (error.name === 'NotAllowedError') {
+                errorMsg += 'Izin kamera ditolak';
+            } else if (error.name === 'NotFoundError') {
+                errorMsg += 'Kamera tidak ditemukan';
+            } else if (error.name === 'NotReadableError') {
+                errorMsg += 'Kamera sedang digunakan aplikasi lain';
+            } else {
+                errorMsg += error.message;
+            }
+            
+            alert('❌ ' + errorMsg + '\n\nCek console browser untuk detail lengkap.');
+        }
+    }
+
     closeCameraModal() {
         if (this.faceCamera) {
             this.faceCamera.stopCamera();
@@ -396,48 +750,105 @@ class AttendanceMobile {
     }
 
     showBasicCameraFallback(modal) {
-        // Fallback to basic camera without face detection
-        modal.querySelector('#cameraLoading').innerHTML = `
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                Face detection tidak tersedia. Menggunakan kamera standar.
+        console.log('Switching to basic camera fallback');
+        
+        // Update loading message
+        const loading = modal.querySelector('#cameraLoading');
+        loading.innerHTML = `
+            <div class="alert alert-info border-0">
+                <i class="fas fa-info-circle me-2"></i>
+                Menggunakan kamera standar (tanpa deteksi wajah)
             </div>
+            <div class="spinner-border text-primary mb-3" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted">Memulai kamera...</p>
         `;
         
         // Initialize basic camera
-        this.initializeBasicCamera(modal);
+        setTimeout(() => {
+            this.initializeBasicCamera(modal);
+        }, 1000);
     }
 
     async initializeBasicCamera(modal) {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
+            console.log('Initializing basic camera...');
+            
+            // Get camera constraints
+            const constraints = {
                 video: {
                     facingMode: 'user',
                     width: { ideal: 720, max: 1280 },
                     height: { ideal: 1280, max: 1920 }
-                }
-            });
+                },
+                audio: false
+            };
+            
+            console.log('Requesting camera access with constraints:', constraints);
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
             
             const video = modal.querySelector('#cameraVideo');
+            const canvas = modal.querySelector('#cameraCanvas');
+            const loading = modal.querySelector('#cameraLoading');
+            const cameraContainer = modal.querySelector('#cameraContainer');
+            
             video.srcObject = stream;
             video.style.display = 'block';
+            canvas.style.display = 'none';
             
-            modal.querySelector('#cameraCanvas').style.display = 'none';
-            modal.querySelector('#cameraLoading').style.display = 'none';
-            modal.querySelector('#cameraContainer').style.display = 'block';
+            // Wait for video to load
+            await new Promise((resolve, reject) => {
+                video.onloadedmetadata = () => {
+                    console.log('Video loaded successfully');
+                    resolve();
+                };
+                video.onerror = (error) => {
+                    console.error('Video load error:', error);
+                    reject(error);
+                };
+                
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    reject(new Error('Video load timeout'));
+                }, 10000);
+            });
+            
+            // Hide loading, show camera
+            loading.style.display = 'none';
+            cameraContainer.style.display = 'block';
             
             // Enable capture button for basic mode
             const captureBtn = modal.querySelector('#captureBtn');
             captureBtn.disabled = false;
+            captureBtn.innerHTML = '<i class="fas fa-camera me-2"></i>Ambil Foto';
+            captureBtn.className = 'btn btn-primary';
             captureBtn.onclick = () => this.takeBasicPhoto(modal, video, stream);
+            
+            console.log('Basic camera initialized successfully');
             
         } catch (error) {
             console.error('Basic camera error:', error);
-            modal.querySelector('#cameraLoading').innerHTML = `
-                <div class="alert alert-danger">
+            
+            const loading = modal.querySelector('#cameraLoading');
+            let errorMessage = 'Tidak dapat mengakses kamera.';
+            
+            if (error.name === 'NotAllowedError') {
+                errorMessage = 'Izin kamera ditolak. Silakan berikan izin kamera dan coba lagi.';
+            } else if (error.name === 'NotFoundError') {
+                errorMessage = 'Kamera tidak ditemukan. Pastikan device memiliki kamera.';
+            } else if (error.name === 'NotReadableError') {
+                errorMessage = 'Kamera sedang digunakan aplikasi lain. Tutup aplikasi lain dan coba lagi.';
+            }
+            
+            loading.innerHTML = `
+                <div class="alert alert-danger border-0">
                     <i class="fas fa-times-circle me-2"></i>
-                    Tidak dapat mengakses kamera. Pastikan izin kamera sudah diberikan.
+                    <strong>Error:</strong> ${errorMessage}
                 </div>
+                <button class="btn btn-primary" onclick="attendanceMobile.initializeBasicCamera(attendanceMobile.currentModal)">
+                    <i class="fas fa-redo me-2"></i>Coba Lagi
+                </button>
             `;
         }
     }

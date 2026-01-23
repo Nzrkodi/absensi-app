@@ -1,6 +1,6 @@
 /**
  * Face Detection for Attendance System
- * Using MediaPipe Face Detection
+ * Using MediaPipe Face Detection with improved error handling
  */
 
 class FaceDetectionCamera {
@@ -14,6 +14,7 @@ class FaceDetectionCamera {
         this.videoElement = null;
         this.canvasElement = null;
         this.canvasCtx = null;
+        this.isInitialized = false;
         
         // Configuration
         this.config = {
@@ -25,38 +26,73 @@ class FaceDetectionCamera {
             stabilityCounter: 0
         };
         
-        this.initializeFaceDetection();
+        // Don't initialize immediately, wait for first use
+        console.log('FaceDetectionCamera created, will initialize on first use');
+    }
+
+    async ensureInitialized() {
+        if (this.isInitialized) {
+            return this.faceDetection !== null;
+        }
+        
+        console.log('Initializing face detection for first use...');
+        await this.initializeFaceDetection();
+        this.isInitialized = true;
+        return this.faceDetection !== null;
     }
 
     async initializeFaceDetection() {
         try {
-            // Load MediaPipe Face Detection
-            const { FaceDetection } = await import('https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/face_detection.js');
+            console.log('Initializing face detection...');
             
-            this.faceDetection = new FaceDetection({
-                locateFile: (file) => {
-                    return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/${file}`;
-                }
+            // Check if MediaPipe is available
+            if (typeof window !== 'undefined' && window.FaceDetection) {
+                // Use already loaded MediaPipe
+                this.setupFaceDetection(window.FaceDetection);
+                return;
+            }
+            
+            // Try to load MediaPipe with timeout
+            const loadTimeout = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('MediaPipe load timeout')), 3000);
             });
-
-            this.faceDetection.setOptions({
-                model: 'short',
-                minDetectionConfidence: this.config.minDetectionConfidence,
-            });
-
-            this.faceDetection.onResults((results) => {
-                this.onFaceDetectionResults(results);
-            });
-
-            console.log('Face detection initialized successfully');
+            
+            const loadMediaPipe = import('https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/face_detection.js')
+                .then(({ FaceDetection }) => {
+                    this.setupFaceDetection(FaceDetection);
+                });
+            
+            await Promise.race([loadMediaPipe, loadTimeout]);
+            
         } catch (error) {
-            console.error('Failed to initialize face detection:', error);
-            // Fallback to basic camera without face detection
+            console.warn('Face detection initialization failed:', error);
+            // Set to null so fallback will be used
             this.faceDetection = null;
         }
     }
 
+    setupFaceDetection(FaceDetection) {
+        this.faceDetection = new FaceDetection({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection@0.4/${file}`;
+            }
+        });
+
+        this.faceDetection.setOptions({
+            model: 'short',
+            minDetectionConfidence: this.config.minDetectionConfidence,
+        });
+
+        this.faceDetection.onResults((results) => {
+            this.onFaceDetectionResults(results);
+        });
+
+        console.log('Face detection initialized successfully');
+    }
+
     async startCamera(videoElement, canvasElement) {
+        console.log('Starting camera...');
+        
         this.videoElement = videoElement;
         this.canvasElement = canvasElement;
         this.canvasCtx = canvasElement.getContext('2d');
@@ -64,27 +100,44 @@ class FaceDetectionCamera {
         try {
             // Get optimal camera constraints for mobile
             const constraints = this.getCameraConstraints();
+            console.log('Camera constraints:', constraints);
             
             this.stream = await navigator.mediaDevices.getUserMedia(constraints);
             this.videoElement.srcObject = this.stream;
             
             // Wait for video to load
-            await new Promise((resolve) => {
+            await new Promise((resolve, reject) => {
                 this.videoElement.onloadedmetadata = () => {
+                    console.log('Video metadata loaded');
                     // Set canvas size to match video
                     this.updateCanvasSize();
                     resolve();
                 };
+                
+                this.videoElement.onerror = (error) => {
+                    console.error('Video error:', error);
+                    reject(error);
+                };
+                
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    reject(new Error('Video load timeout'));
+                }, 10000);
             });
 
-            // Start face detection if available
-            if (this.faceDetection) {
+            // Try to initialize face detection
+            const faceDetectionReady = await this.ensureInitialized();
+            
+            if (faceDetectionReady) {
+                console.log('Starting face detection...');
                 this.startFaceDetection();
+            } else {
+                console.log('Face detection not available, camera ready without face detection');
             }
 
             return true;
         } catch (error) {
-            console.error('Camera access error:', error);
+            console.error('Camera start error:', error);
             throw error;
         }
     }
