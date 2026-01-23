@@ -18,12 +18,13 @@ class FaceDetectionCamera {
         
         // Configuration
         this.config = {
-            minDetectionConfidence: 0.5,
-            minFaceSize: 0.15, // Minimum face size relative to image (15%)
-            maxFaceSize: 0.8,  // Maximum face size relative to image (80%)
-            centerTolerance: 0.3, // How centered the face should be (30% tolerance)
-            requiredStability: 3, // Number of consecutive detections needed
-            stabilityCounter: 0
+            minDetectionConfidence: 0.7,    // Increased from 0.5 to 0.7 for better accuracy
+            minFaceSize: 0.20,              // Increased from 0.15 to 0.20 (20% of image)
+            maxFaceSize: 0.70,              // Decreased from 0.8 to 0.70 (70% of image)
+            centerTolerance: 0.25,          // Decreased from 0.3 to 0.25 (25% tolerance)
+            requiredStability: 5,           // Increased from 3 to 5 consecutive detections
+            stabilityCounter: 0,
+            maxDistance: 0.15               // Maximum distance from center (15%)
         };
         
         // Don't initialize immediately, wait for first use
@@ -281,25 +282,37 @@ class FaceDetectionCamera {
         // Calculate distance from center (normalized)
         const distanceFromCenterX = Math.abs(faceCenterX - videoCenterX) / (videoWidth / 2);
         const distanceFromCenterY = Math.abs(faceCenterY - videoCenterY) / (videoHeight / 2);
+        const totalDistance = Math.sqrt(distanceFromCenterX * distanceFromCenterX + distanceFromCenterY * distanceFromCenterY);
         
-        // Validation checks
+        // Validation checks with more specific messages
         if (faceRatio < this.config.minFaceSize) {
-            return { isValid: false, message: 'Wajah terlalu kecil, dekatkan ke kamera' };
+            return { isValid: false, message: `Wajah terlalu kecil (${Math.round(faceRatio * 100)}%). Dekatkan ke kamera.` };
         }
         
         if (faceRatio > this.config.maxFaceSize) {
-            return { isValid: false, message: 'Wajah terlalu besar, jauhkan dari kamera' };
+            return { isValid: false, message: `Wajah terlalu besar (${Math.round(faceRatio * 100)}%). Jauhkan dari kamera.` };
         }
         
-        if (distanceFromCenterX > this.config.centerTolerance) {
+        if (totalDistance > this.config.maxDistance) {
+            if (distanceFromCenterX > this.config.centerTolerance) {
+                return { isValid: false, message: 'Geser wajah ke tengah kamera (kiri-kanan)' };
+            }
+            if (distanceFromCenterY > this.config.centerTolerance) {
+                return { isValid: false, message: 'Geser wajah ke tengah kamera (atas-bawah)' };
+            }
             return { isValid: false, message: 'Posisikan wajah di tengah kamera' };
         }
         
-        if (distanceFromCenterY > this.config.centerTolerance) {
-            return { isValid: false, message: 'Posisikan wajah di tengah kamera' };
+        // Check face aspect ratio (should be roughly portrait)
+        const faceAspectRatio = faceWidth / faceHeight;
+        if (faceAspectRatio < 0.6 || faceAspectRatio > 1.4) {
+            return { isValid: false, message: 'Posisi kepala terlalu miring. Tegakkan kepala.' };
         }
         
-        return { isValid: true, message: 'Posisi wajah sudah tepat' };
+        return { 
+            isValid: true, 
+            message: `Posisi sempurna! (${Math.round(faceRatio * 100)}% area)` 
+        };
     }
 
     drawFaceOverlay(bbox, isValid) {
@@ -396,6 +409,72 @@ class FaceDetectionCamera {
 
     isFaceDetected() {
         return this.faceDetected;
+    }
+
+    isFaceValid() {
+        return this.faceDetected && this.config.stabilityCounter >= this.config.requiredStability;
+    }
+
+    getValidationMessage() {
+        if (!this.detectionResults || !this.detectionResults.detections || this.detectionResults.detections.length === 0) {
+            return 'Tidak ada wajah terdeteksi';
+        }
+
+        const detection = this.detectionResults.detections[0];
+        const bbox = detection.boundingBox;
+        const validation = this.validateFaceDetection(bbox);
+        
+        return validation.message;
+    }
+
+    async captureValidatedPhoto() {
+        if (!this.isFaceValid()) {
+            throw new Error('Face not properly detected and validated');
+        }
+
+        if (!this.canvasElement || !this.videoElement) {
+            throw new Error('Camera not initialized');
+        }
+
+        // Create a new canvas for the final photo
+        const photoCanvas = document.createElement('canvas');
+        const photoCtx = photoCanvas.getContext('2d');
+        
+        // Set photo canvas size to video dimensions for best quality
+        photoCanvas.width = this.videoElement.videoWidth;
+        photoCanvas.height = this.videoElement.videoHeight;
+        
+        // Check if video is mirrored and flip accordingly
+        const isVideoMirrored = this.videoElement.style.transform.includes('scaleX(-1)');
+        
+        if (isVideoMirrored) {
+            // If video is mirrored, flip the canvas to get normal photo
+            photoCtx.scale(-1, 1);
+            photoCtx.drawImage(this.videoElement, -photoCanvas.width, 0, photoCanvas.width, photoCanvas.height);
+        } else {
+            // If video is normal, draw normally
+            photoCtx.drawImage(this.videoElement, 0, 0, photoCanvas.width, photoCanvas.height);
+        }
+        
+        // Add face detection metadata to the photo
+        const faceData = {
+            timestamp: Date.now(),
+            faceDetected: true,
+            confidence: this.detectionResults.detections[0].score,
+            boundingBox: this.detectionResults.detections[0].boundingBox,
+            stabilityCount: this.config.stabilityCounter
+        };
+        
+        console.log('Face validation data:', faceData);
+        
+        // Convert to blob with high quality
+        return new Promise((resolve) => {
+            photoCanvas.toBlob((blob) => {
+                // Attach face validation metadata to blob
+                blob.faceValidation = faceData;
+                resolve(blob);
+            }, 'image/jpeg', 0.9); // High quality JPEG
+        });
     }
 
     // Fallback method for devices without face detection support

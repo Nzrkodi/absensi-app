@@ -170,14 +170,22 @@ class AttendanceMobile {
         return R * c;
     }
 
-    // Ambil foto dari kamera dengan face detection
+    // Ambil foto dari kamera dengan face detection WAJIB
     async capturePhoto() {
         try {
-            console.log('Starting photo capture process...');
+            console.log('Starting photo capture with MANDATORY face detection...');
             
-            // For now, skip face detection and go directly to basic camera
-            // TODO: Re-enable face detection after basic camera is working
-            this.showSimpleCameraModal();
+            // Initialize face detection camera - WAJIB untuk absensi
+            if (!this.faceCamera) {
+                console.log('Creating new FaceDetectionCamera instance...');
+                this.faceCamera = new FaceDetectionCamera();
+                
+                // Wait for initialization
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            // Show face detection camera modal (WAJIB)
+            this.showMandatoryFaceDetectionModal();
             
         } catch (error) {
             console.error('Camera error:', error);
@@ -191,6 +199,221 @@ class AttendanceMobile {
                 alert('Tidak dapat mengakses kamera. Pastikan izin kamera sudah diberikan dan tidak ada aplikasi lain yang menggunakan kamera.');
             }
         }
+    }
+
+    // Modal kamera dengan WAJIB face detection
+    showMandatoryFaceDetectionModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal fade show';
+        modal.style.display = 'block';
+        modal.style.zIndex = '9999';
+        modal.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-user-check me-2"></i>
+                            Verifikasi Wajah untuk Absensi
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" onclick="attendanceMobile.closeFaceDetectionModal()"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <!-- Loading State -->
+                        <div id="faceLoading" class="text-center p-5">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted">Memulai deteksi wajah...</p>
+                            <small class="text-info">Pastikan wajah Anda terlihat jelas di kamera</small>
+                        </div>
+                        
+                        <!-- Face Detection Camera Container -->
+                        <div id="faceDetectionContainer" style="display: none; position: relative;">
+                            <video id="faceVideo" class="w-100" autoplay muted playsinline style="transform: scaleX(-1); display: none;"></video>
+                            <canvas id="faceCanvas" class="w-100" style="border-radius: 10px;"></canvas>
+                            
+                            <!-- Face Detection Status Overlay -->
+                            <div class="position-absolute top-0 start-0 end-0 p-3" style="z-index: 10;">
+                                <div id="faceStatus" class="text-center">
+                                    <div class="bg-dark bg-opacity-75 text-white px-3 py-2 rounded">
+                                        <i class="fas fa-search me-2"></i>
+                                        <span id="faceStatusText">Mencari wajah...</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Instructions Overlay -->
+                            <div class="position-absolute bottom-0 start-0 end-0 p-3" style="z-index: 10;">
+                                <div class="bg-dark bg-opacity-75 text-white px-3 py-2 rounded text-center">
+                                    <small>
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Posisikan wajah di tengah lingkaran dan tunggu hingga terdeteksi
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <!-- Mirror Toggle -->
+                            <div class="position-absolute top-0 end-0 p-3" style="z-index: 10;">
+                                <button type="button" class="btn btn-sm btn-outline-light" onclick="attendanceMobile.toggleFaceMirror()" title="Toggle Mirror Mode">
+                                    <i class="fas fa-sync-alt"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Photo Preview -->
+                        <div id="facePhotoPreview" style="display: none;" class="text-center p-3">
+                            <img id="faceCapturedPhoto" class="img-fluid rounded shadow">
+                            <div class="mt-3">
+                                <div class="alert alert-success border-0">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    <strong>Wajah terdeteksi!</strong> Foto siap digunakan untuk absensi.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fallback Message -->
+                        <div id="faceDetectionFailed" style="display: none;" class="text-center p-5">
+                            <div class="alert alert-warning border-0">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Face Detection Tidak Tersedia</strong>
+                                <p class="mb-3">Sistem deteksi wajah tidak dapat dimuat. Silakan gunakan kamera manual atau coba refresh halaman.</p>
+                                <button class="btn btn-primary" onclick="attendanceMobile.showSimpleCameraFallback()">
+                                    <i class="fas fa-camera me-2"></i>Gunakan Kamera Manual
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="attendanceMobile.closeFaceDetectionModal()">
+                            <i class="fas fa-times me-2"></i>Batal
+                        </button>
+                        <button type="button" id="faceDetectionCaptureBtn" class="btn btn-primary" disabled>
+                            <i class="fas fa-camera me-2"></i>
+                            <span id="captureButtonText">Menunggu Wajah...</span>
+                        </button>
+                        <button type="button" id="faceRetakeBtn" class="btn btn-warning" style="display: none;">
+                            <i class="fas fa-redo me-2"></i>Ambil Ulang
+                        </button>
+                        <button type="button" id="faceUseBtn" class="btn btn-success" style="display: none;">
+                            <i class="fas fa-check me-2"></i>Gunakan Foto
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        this.currentModal = modal;
+        
+        // Initialize face detection camera
+        this.initializeMandatoryFaceDetection(modal);
+    }
+
+    async initializeMandatoryFaceDetection(modal) {
+        console.log('Initializing MANDATORY face detection...');
+        
+        try {
+            const video = modal.querySelector('#faceVideo');
+            const canvas = modal.querySelector('#faceCanvas');
+            const loading = modal.querySelector('#faceLoading');
+            const container = modal.querySelector('#faceDetectionContainer');
+            const failedDiv = modal.querySelector('#faceDetectionFailed');
+            
+            // Set timeout for face detection initialization
+            const initTimeout = setTimeout(() => {
+                console.log('Face detection initialization timeout');
+                loading.style.display = 'none';
+                failedDiv.style.display = 'block';
+            }, 10000); // 10 second timeout
+            
+            // Ensure face detection is initialized
+            const faceDetectionReady = await this.faceCamera.ensureInitialized();
+            
+            if (!faceDetectionReady) {
+                throw new Error('Face detection not available');
+            }
+            
+            // Start camera with face detection
+            await this.faceCamera.startCamera(video, canvas);
+            clearTimeout(initTimeout);
+            
+            console.log('Mandatory face detection camera started successfully');
+            
+            // Hide loading, show camera
+            loading.style.display = 'none';
+            container.style.display = 'block';
+            
+            // Setup event listeners
+            this.setupFaceDetectionEventListeners(modal);
+            
+            // Start monitoring face detection
+            this.monitorMandatoryFaceDetection(modal);
+            
+        } catch (error) {
+            console.error('Mandatory face detection initialization error:', error);
+            clearTimeout(initTimeout);
+            
+            // Show fallback option
+            loading.style.display = 'none';
+            modal.querySelector('#faceDetectionFailed').style.display = 'block';
+        }
+    }
+
+    setupFaceDetectionEventListeners(modal) {
+        const captureBtn = modal.querySelector('#faceDetectionCaptureBtn');
+        const retakeBtn = modal.querySelector('#faceRetakeBtn');
+        const useBtn = modal.querySelector('#faceUseBtn');
+        
+        captureBtn.onclick = () => this.takeMandatoryFacePhoto(modal);
+        retakeBtn.onclick = () => this.retakeMandatoryFacePhoto(modal);
+        useBtn.onclick = () => this.useMandatoryFacePhoto(modal);
+    }
+
+    monitorMandatoryFaceDetection(modal) {
+        const captureBtn = modal.querySelector('#faceDetectionCaptureBtn');
+        const statusText = modal.querySelector('#faceStatusText');
+        const captureButtonText = modal.querySelector('#captureButtonText');
+        
+        const checkFaceDetection = () => {
+            if (!this.faceCamera || !document.body.contains(modal)) {
+                return; // Stop monitoring if modal is closed
+            }
+            
+            const faceDetected = this.faceCamera.isFaceDetected();
+            const faceValid = this.faceCamera.isFaceValid();
+            
+            if (faceDetected && faceValid) {
+                // Face detected and valid
+                captureBtn.disabled = false;
+                captureBtn.className = 'btn btn-success';
+                captureButtonText.textContent = 'Ambil Foto Sekarang!';
+                
+                statusText.innerHTML = '<i class="fas fa-check-circle text-success me-2"></i>Wajah Terdeteksi - Siap!';
+                
+            } else if (faceDetected && !faceValid) {
+                // Face detected but not valid position
+                captureBtn.disabled = true;
+                captureBtn.className = 'btn btn-warning';
+                captureButtonText.textContent = 'Perbaiki Posisi Wajah';
+                
+                const validation = this.faceCamera.getValidationMessage();
+                statusText.innerHTML = `<i class="fas fa-exclamation-triangle text-warning me-2"></i>${validation}`;
+                
+            } else {
+                // No face detected
+                captureBtn.disabled = true;
+                captureBtn.className = 'btn btn-primary';
+                captureButtonText.textContent = 'Menunggu Wajah...';
+                
+                statusText.innerHTML = '<i class="fas fa-search text-info me-2"></i>Mencari wajah...';
+            }
+            
+            // Continue monitoring
+            setTimeout(checkFaceDetection, 200); // Check every 200ms
+        };
+        
+        // Start monitoring after a short delay
+        setTimeout(checkFaceDetection, 1000);
     }
 
     // Simple camera modal without face detection (for testing)
@@ -435,7 +658,7 @@ class AttendanceMobile {
         }
     }
 
-    // Toggle mirror effect on camera preview
+    // Toggle mirror effect on simple camera preview
     toggleMirror() {
         const video = document.getElementById('simpleCameraVideo');
         if (video) {
@@ -446,6 +669,101 @@ class AttendanceMobile {
                 video.style.transform = 'scaleX(-1)'; // Mirror view (default for selfie)
             }
         }
+    }
+
+    async takeMandatoryFacePhoto(modal) {
+        try {
+            console.log('Taking mandatory face photo...');
+            
+            // Double check face detection
+            if (!this.faceCamera.isFaceDetected() || !this.faceCamera.isFaceValid()) {
+                alert('Wajah belum terdeteksi dengan benar. Pastikan posisi wajah sudah tepat.');
+                return;
+            }
+            
+            // Capture photo with face detection validation
+            this.photoBlob = await this.faceCamera.captureValidatedPhoto();
+            
+            if (!this.photoBlob) {
+                alert('Gagal mengambil foto. Pastikan wajah terdeteksi dengan baik.');
+                return;
+            }
+            
+            // Show preview
+            const preview = modal.querySelector('#facePhotoPreview');
+            const img = modal.querySelector('#faceCapturedPhoto');
+            img.src = URL.createObjectURL(this.photoBlob);
+            
+            modal.querySelector('#faceDetectionContainer').style.display = 'none';
+            preview.style.display = 'block';
+            
+            // Update buttons
+            modal.querySelector('#faceDetectionCaptureBtn').style.display = 'none';
+            modal.querySelector('#faceRetakeBtn').style.display = 'inline-block';
+            modal.querySelector('#faceUseBtn').style.display = 'inline-block';
+            
+            console.log('Mandatory face photo captured successfully');
+            
+        } catch (error) {
+            console.error('Mandatory face photo capture error:', error);
+            alert('Gagal mengambil foto wajah. Silakan coba lagi.');
+        }
+    }
+
+    retakeMandatoryFacePhoto(modal) {
+        // Show camera again
+        modal.querySelector('#faceDetectionContainer').style.display = 'block';
+        modal.querySelector('#facePhotoPreview').style.display = 'none';
+        
+        // Reset buttons
+        modal.querySelector('#faceDetectionCaptureBtn').style.display = 'inline-block';
+        modal.querySelector('#faceRetakeBtn').style.display = 'none';
+        modal.querySelector('#faceUseBtn').style.display = 'none';
+        
+        // Restart face detection monitoring
+        this.monitorMandatoryFaceDetection(modal);
+    }
+
+    useMandatoryFacePhoto(modal) {
+        // Update UI to show photo is captured with face validation
+        const photoStatus = document.getElementById('photoStatus');
+        if (photoStatus) {
+            photoStatus.innerHTML = '<i class="fas fa-user-check text-success me-2"></i>Foto wajah terverifikasi berhasil diambil';
+        }
+        
+        this.closeFaceDetectionModal();
+    }
+
+    toggleFaceMirror() {
+        const video = document.getElementById('faceVideo');
+        if (video) {
+            const currentTransform = video.style.transform;
+            if (currentTransform.includes('scaleX(-1)')) {
+                video.style.transform = 'scaleX(1)'; // Normal view
+            } else {
+                video.style.transform = 'scaleX(-1)'; // Mirror view (default for selfie)
+            }
+        }
+    }
+
+    closeFaceDetectionModal() {
+        if (this.faceCamera) {
+            this.faceCamera.stopCamera();
+        }
+        
+        if (this.currentModal) {
+            this.currentModal.remove();
+            this.currentModal = null;
+        }
+    }
+
+    // Fallback to simple camera if face detection fails
+    showSimpleCameraFallback() {
+        // Close current modal
+        this.closeFaceDetectionModal();
+        
+        // Show simple camera modal
+        this.showSimpleCameraModal();
     }
 
     // Tampilkan modal kamera dengan face detection

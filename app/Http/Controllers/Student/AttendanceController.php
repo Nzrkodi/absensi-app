@@ -10,6 +10,7 @@ use App\Services\AttendancePhotoService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Log;
 
 class AttendanceController extends Controller
 {
@@ -63,8 +64,19 @@ class AttendanceController extends Controller
         $request->validate([
             'photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'latitude' => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180'
+            'longitude' => 'required|numeric|between:-180,180',
+            'face_validation' => 'sometimes|boolean' // Face validation flag from client
         ]);
+        
+        // TODO: Add server-side face detection validation here
+        // For now, we trust client-side validation but log it for audit
+        if ($request->has('face_validation') && $request->face_validation) {
+            Log::info('Clock in with face validation', [
+                'student_id' => Session::get('student_id'),
+                'face_validated' => true,
+                'timestamp' => now()
+            ]);
+        }
         
         $student = Student::find(Session::get('student_id'));
         
@@ -164,8 +176,18 @@ class AttendanceController extends Controller
         $request->validate([
             'photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'latitude' => 'required|numeric|between:-90,90',
-            'longitude' => 'required|numeric|between:-180,180'
+            'longitude' => 'required|numeric|between:-180,180',
+            'face_validation' => 'sometimes|boolean' // Face validation flag from client
         ]);
+        
+        // Log face validation for clock out
+        if ($request->has('face_validation') && $request->face_validation) {
+            Log::info('Clock out with face validation', [
+                'student_id' => Session::get('student_id'),
+                'face_validated' => true,
+                'timestamp' => now()
+            ]);
+        }
         
         $student = Student::find(Session::get('student_id'));
         

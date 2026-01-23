@@ -388,6 +388,12 @@ async function clockIn() {
     formData.append('latitude', attendanceMobile.currentPosition.latitude);
     formData.append('longitude', attendanceMobile.currentPosition.longitude);
     
+    // Add face validation flag if photo has face validation data
+    if (attendanceMobile.photoBlob && attendanceMobile.photoBlob.faceValidation) {
+        formData.append('face_validation', 'true');
+        console.log('Sending face validation data:', attendanceMobile.photoBlob.faceValidation);
+    }
+    
     try {
         const response = await fetch('{{ route("student.attendance.clock-in") }}', {
             method: 'POST',
@@ -462,6 +468,12 @@ async function clockOut() {
     formData.append('photo', attendanceMobile.photoBlob, 'clock_out.jpg');
     formData.append('latitude', attendanceMobile.currentPosition.latitude);
     formData.append('longitude', attendanceMobile.currentPosition.longitude);
+    
+    // Add face validation flag if photo has face validation data
+    if (attendanceMobile.photoBlob && attendanceMobile.photoBlob.faceValidation) {
+        formData.append('face_validation', 'true');
+        console.log('Sending face validation data for clock out:', attendanceMobile.photoBlob.faceValidation);
+    }
     
     try {
         const response = await fetch('{{ route("student.attendance.clock-out") }}', {
