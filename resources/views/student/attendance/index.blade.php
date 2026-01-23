@@ -248,7 +248,88 @@
 @endsection
 
 @push('scripts')
+<script src="{{ asset('js/face-detection.js') }}?v={{ time() }}"></script>
 <script src="{{ asset('js/attendance-mobile.js') }}?v={{ time() }}"></script>
+
+<style>
+/* Face Detection Styles */
+.face-guidance {
+    transition: all 0.3s ease;
+    font-weight: 500;
+    border-radius: 20px !important;
+}
+
+.face-guidance.success {
+    background-color: rgba(40, 167, 69, 0.9) !important;
+    color: white !important;
+}
+
+.face-guidance.warning {
+    background-color: rgba(255, 193, 7, 0.9) !important;
+    color: #212529 !important;
+}
+
+.face-guidance.info {
+    background-color: rgba(23, 162, 184, 0.9) !important;
+    color: white !important;
+}
+
+.face-guidance.error {
+    background-color: rgba(220, 53, 69, 0.9) !important;
+    color: white !important;
+}
+
+/* Camera Modal Enhancements */
+.modal-lg .modal-content {
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+#cameraCanvas, #cameraVideo {
+    border-radius: 10px;
+    max-height: 70vh;
+    object-fit: cover;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .modal-lg {
+        margin: 0.5rem;
+    }
+    
+    .modal-lg .modal-dialog {
+        max-width: calc(100% - 1rem);
+    }
+    
+    #cameraCanvas, #cameraVideo {
+        max-height: 60vh;
+    }
+}
+
+/* Loading Animation */
+.spinner-border {
+    animation: spinner-border 0.75s linear infinite;
+}
+
+@keyframes spinner-border {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Button Animations */
+.btn {
+    transition: all 0.2s ease;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+</style>
 <script>
 // Clock In Function
 async function clockIn() {
