@@ -131,6 +131,11 @@
                             </div>
                             <span class="text-muted">Mengecek lokasi...</span>
                         </div>
+                        
+                        <!-- Debug GPS Button -->
+                        <button type="button" class="btn btn-outline-info btn-sm mt-2" onclick="testGPS()" style="font-size: 0.75rem;">
+                            <i class="fas fa-map-marker-alt me-1"></i>Test GPS Manual
+                        </button>
                     </div>
                     
                     <div>
@@ -352,13 +357,68 @@ async function clockIn() {
     }
     
     if (!attendanceMobile.currentPosition) {
-        Swal.fire({
-            icon: 'warning',
-            title: 'Lokasi Diperlukan',
-            text: 'Lokasi belum terdeteksi. Pastikan GPS aktif dan izin lokasi diberikan.',
-            confirmButtonText: 'OK'
-        });
-        return;
+        // Try to get location one more time before proceeding
+        if (navigator.geolocation) {
+            const result = await Swal.fire({
+                icon: 'warning',
+                title: 'Lokasi Belum Terdeteksi',
+                text: 'GPS belum ready. Apakah Anda ingin mencoba sekali lagi atau lanjutkan tanpa validasi lokasi awal?',
+                showCancelButton: true,
+                confirmButtonText: 'Coba GPS Lagi',
+                cancelButtonText: 'Lanjutkan Tanpa GPS',
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33'
+            });
+            
+            if (result.isConfirmed) {
+                // Try to get location one more time
+                try {
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: true,
+                            timeout: 10000,
+                            maximumAge: 0
+                        });
+                    });
+                    
+                    attendanceMobile.currentPosition = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude
+                    };
+                    
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'GPS Berhasil!',
+                        text: 'Lokasi berhasil didapat. Melanjutkan absensi...',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } catch (error) {
+                    console.error('GPS retry failed:', error);
+                    // Set default position for server-side validation
+                    attendanceMobile.currentPosition = {
+                        latitude: 0,
+                        longitude: 0,
+                        isManual: true
+                    };
+                }
+            } else {
+                // User chose to continue without GPS
+                attendanceMobile.currentPosition = {
+                    latitude: 0,
+                    longitude: 0,
+                    isManual: true
+                };
+            }
+        } else {
+            Swal.fire({
+                icon: 'error',
+                title: 'GPS Tidak Didukung',
+                text: 'Browser tidak mendukung GPS. Hubungi admin untuk bantuan.',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
     }
     
     // Validate location before proceeding
@@ -468,8 +528,28 @@ async function clockOut() {
     }
     
     if (!attendanceMobile.currentPosition) {
-        alert('Lokasi belum terdeteksi. Pastikan GPS aktif dan izin lokasi diberikan.');
-        return;
+        // For clock out, be more lenient with location
+        const result = await Swal.fire({
+            icon: 'question',
+            title: 'Lokasi Belum Terdeteksi',
+            text: 'GPS belum ready untuk clock out. Lanjutkan tanpa validasi lokasi?',
+            showCancelButton: true,
+            confirmButtonText: 'Ya, Lanjutkan',
+            cancelButtonText: 'Batal',
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#6c757d'
+        });
+        
+        if (result.isConfirmed) {
+            // Set default position for clock out
+            attendanceMobile.currentPosition = {
+                latitude: 0,
+                longitude: 0,
+                isManual: true
+            };
+        } else {
+            return;
+        }
     }
     
     // Show loading
@@ -551,8 +631,91 @@ async function clockOut() {
     }
 }
 
+// Test GPS function for debugging
+async function testGPS() {
+    console.log('=== GPS TEST START ===');
+    
+    const locationStatus = document.getElementById('locationStatus');
+    locationStatus.innerHTML = `
+        <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+        <span class="text-info">Testing GPS...</span>
+    `;
+    
+    try {
+        // Test 1: Check if geolocation is supported
+        if (!navigator.geolocation) {
+            throw new Error('Geolocation not supported');
+        }
+        console.log('✓ Geolocation supported');
+        
+        // Test 2: Check permissions
+        if (navigator.permissions) {
+            const permission = await navigator.permissions.query({ name: 'geolocation' });
+            console.log('✓ Geolocation permission:', permission.state);
+        }
+        
+        // Test 3: Get current position
+        console.log('Getting current position...');
+        const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(
+                resolve,
+                reject,
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        });
+        
+        console.log('✓ GPS Position:', position.coords);
+        
+        // Update attendanceMobile position
+        if (window.attendanceMobile) {
+            window.attendanceMobile.currentPosition = {
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+            };
+            
+            // Try to validate location
+            const isValid = await window.attendanceMobile.validateLocation();
+            console.log('✓ Location validation:', isValid);
+        }
+        
+        locationStatus.innerHTML = `
+            <i class="fas fa-check-circle text-success me-2"></i>
+            <span class="text-success">GPS Test Berhasil! Lat: ${position.coords.latitude.toFixed(6)}, Lng: ${position.coords.longitude.toFixed(6)}</span>
+        `;
+        
+        console.log('=== GPS TEST SUCCESS ===');
+        
+    } catch (error) {
+        console.error('=== GPS TEST FAILED ===');
+        console.error('Error:', error);
+        
+        let errorMsg = 'GPS Test Gagal: ';
+        if (error.code === 1) {
+            errorMsg += 'Permission denied';
+        } else if (error.code === 2) {
+            errorMsg += 'Position unavailable';
+        } else if (error.code === 3) {
+            errorMsg += 'Timeout';
+        } else {
+            errorMsg += error.message;
+        }
+        
+        locationStatus.innerHTML = `
+            <i class="fas fa-times-circle text-danger me-2"></i>
+            <span class="text-danger">${errorMsg}</span>
+        `;
+    }
+}
+
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize AttendanceMobile class
+    window.attendanceMobile = new AttendanceMobile();
+    
     // Check if geolocation is supported
     if (!navigator.geolocation) {
         document.getElementById('locationStatus').innerHTML = 
@@ -563,6 +726,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert('Browser tidak mendukung kamera. Gunakan browser yang lebih baru.');
     }
+    
+    // Add debug info
+    console.log('AttendanceMobile initialized:', window.attendanceMobile);
 });
 </script>
 @endpush

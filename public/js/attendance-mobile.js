@@ -30,7 +30,7 @@ class AttendanceMobile {
         }
     }
 
-    // Ambil lokasi GPS
+    // Ambil lokasi GPS dengan timeout dan fallback
     initializeGeolocation() {
         if (navigator.geolocation) {
             // Update location status
@@ -44,8 +44,15 @@ class AttendanceMobile {
                 `;
             }
             
+            // Set timeout for location - more aggressive
+            const locationTimeout = setTimeout(() => {
+                console.log('Location timeout after 10 seconds, using fallback');
+                this.handleLocationTimeout();
+            }, 10000); // Reduced to 10 seconds
+            
             navigator.geolocation.getCurrentPosition(
                 (position) => {
+                    clearTimeout(locationTimeout);
                     this.currentPosition = {
                         latitude: position.coords.latitude,
                         longitude: position.coords.longitude
@@ -59,18 +66,37 @@ class AttendanceMobile {
                     }, 30000);
                 },
                 (error) => {
+                    clearTimeout(locationTimeout);
                     console.error('Geolocation error:', error);
                     this.showLocationError(error);
                 },
                 {
                     enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 0
+                    timeout: 8000, // Reduced to 8 seconds
+                    maximumAge: 30000 // Accept 30 second old location
                 }
             );
         } else {
             this.showLocationError({ code: 0, message: 'Browser tidak mendukung GPS' });
         }
+    }
+
+    handleLocationTimeout() {
+        console.log('Location detection timeout - allowing manual override');
+        const locationStatus = document.getElementById('locationStatus');
+        if (locationStatus) {
+            locationStatus.innerHTML = `
+                <i class="fas fa-exclamation-triangle text-warning me-2"></i>
+                <span class="text-warning">GPS timeout - Lokasi akan divalidasi saat absen</span>
+            `;
+        }
+        
+        // Set a default position (will be validated during attendance)
+        this.currentPosition = {
+            latitude: 0,
+            longitude: 0,
+            isTimeout: true
+        };
     }
     
     // Refresh location
@@ -96,16 +122,26 @@ class AttendanceMobile {
         }
     }
 
-    // Validasi jarak dari sekolah
+    // Validasi jarak dari sekolah dengan timeout
     async validateLocation() {
         if (!this.currentPosition) {
             console.log('No current position available');
             return false;
         }
         
+        // Skip validation if position is from timeout
+        if (this.currentPosition.isTimeout) {
+            console.log('Skipping validation for timeout position');
+            return false;
+        }
+        
         console.log('Validating location:', this.currentPosition);
         
         try {
+            // Add timeout for API call
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+            
             const response = await fetch('/api/school-locations/validate', {
                 method: 'POST',
                 headers: {
@@ -115,8 +151,15 @@ class AttendanceMobile {
                 body: JSON.stringify({
                     latitude: this.currentPosition.latitude,
                     longitude: this.currentPosition.longitude
-                })
+                }),
+                signal: controller.signal
             });
+            
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
             
             const result = await response.json();
             console.log('Validation result:', result);
@@ -145,10 +188,17 @@ class AttendanceMobile {
             console.error('Location validation error:', error);
             const locationStatus = document.getElementById('locationStatus');
             if (locationStatus) {
-                locationStatus.innerHTML = `
-                    <i class="fas fa-exclamation-circle text-warning me-2"></i>
-                    <span class="text-warning">Gagal memvalidasi lokasi</span>
-                `;
+                if (error.name === 'AbortError') {
+                    locationStatus.innerHTML = `
+                        <i class="fas fa-clock text-warning me-2"></i>
+                        <span class="text-warning">Validasi lokasi timeout - Akan dicek saat absen</span>
+                    `;
+                } else {
+                    locationStatus.innerHTML = `
+                        <i class="fas fa-exclamation-circle text-warning me-2"></i>
+                        <span class="text-warning">Gagal validasi lokasi - Akan dicek saat absen</span>
+                    `;
+                }
             }
             return false;
         }
@@ -1503,7 +1553,4 @@ class AttendanceMobile {
     }
 }
 
-// Initialize when DOM is ready
-document.addEventListener('DOMContentLoaded', function() {
-    window.attendanceMobile = new AttendanceMobile();
-});
+// AttendanceMobile class will be initialized from the blade template
