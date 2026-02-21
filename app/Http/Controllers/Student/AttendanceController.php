@@ -65,22 +65,11 @@ class AttendanceController extends Controller
             'photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            'face_validation' => 'required|boolean|accepted' // WAJIB ada dan harus true
         ]);
         
-        // MANDATORY: Check face validation
-        if (!$request->has('face_validation') || !$request->face_validation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Absensi memerlukan verifikasi wajah. Pastikan wajah terdeteksi dengan benar sebelum mengambil foto.',
-                'error_code' => 'FACE_VALIDATION_REQUIRED'
-            ]);
-        }
-        
-        // Log successful face validation
-        Log::info('Clock in with mandatory face validation', [
+        // Log clock in
+        Log::info('Clock in', [
             'student_id' => Session::get('student_id'),
-            'face_validated' => true,
             'timestamp' => now(),
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent()
@@ -185,22 +174,11 @@ class AttendanceController extends Controller
             'photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            'face_validation' => 'required|boolean|accepted' // WAJIB ada dan harus true
         ]);
         
-        // MANDATORY: Check face validation for clock out
-        if (!$request->has('face_validation') || !$request->face_validation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Absensi pulang memerlukan verifikasi wajah. Pastikan wajah terdeteksi dengan benar sebelum mengambil foto.',
-                'error_code' => 'FACE_VALIDATION_REQUIRED'
-            ]);
-        }
-        
-        // Log face validation for clock out
-        Log::info('Clock out with mandatory face validation', [
+        // Log clock out
+        Log::info('Clock out', [
             'student_id' => Session::get('student_id'),
-            'face_validated' => true,
             'timestamp' => now(),
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent()

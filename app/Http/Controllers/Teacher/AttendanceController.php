@@ -65,21 +65,10 @@ class AttendanceController extends Controller
             'photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            'face_validation' => 'required|boolean|accepted'
         ]);
         
-        // Check face validation
-        if (!$request->has('face_validation') || !$request->face_validation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Absensi memerlukan verifikasi wajah. Pastikan wajah terdeteksi dengan benar sebelum mengambil foto.',
-                'error_code' => 'FACE_VALIDATION_REQUIRED'
-            ]);
-        }
-        
-        Log::info('Teacher clock in with face validation', [
+        Log::info('Teacher clock in', [
             'teacher_id' => Session::get('teacher_id'),
-            'face_validated' => true,
             'timestamp' => now()
         ]);
         
@@ -178,21 +167,10 @@ class AttendanceController extends Controller
             'photo' => 'required|image|mimes:jpeg,png,jpg|max:2048',
             'latitude' => 'required|numeric|between:-90,90',
             'longitude' => 'required|numeric|between:-180,180',
-            'face_validation' => 'required|boolean|accepted'
         ]);
         
-        // Check face validation
-        if (!$request->has('face_validation') || !$request->face_validation) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Absensi pulang memerlukan verifikasi wajah. Pastikan wajah terdeteksi dengan benar sebelum mengambil foto.',
-                'error_code' => 'FACE_VALIDATION_REQUIRED'
-            ]);
-        }
-        
-        Log::info('Teacher clock out with face validation', [
+        Log::info('Teacher clock out', [
             'teacher_id' => Session::get('teacher_id'),
-            'face_validated' => true,
             'timestamp' => now()
         ]);
         
