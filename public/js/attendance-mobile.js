@@ -455,6 +455,9 @@ class AttendanceMobile {
             video.srcObject = stream;
             this.currentStream = stream;
             
+            // Play the video
+            await video.play();
+            
             // Wait for video to load
             await new Promise((resolve, reject) => {
                 video.onloadedmetadata = () => {
@@ -655,6 +658,9 @@ class AttendanceMobile {
             
             video.srcObject = stream;
             this.currentStream = stream;
+            
+            // Play the video
+            await video.play();
             
             // Wait for video to load
             await new Promise((resolve, reject) => {
@@ -1398,6 +1404,9 @@ class AttendanceMobile {
             video.srcObject = stream;
             video.style.display = 'block';
             canvas.style.display = 'none';
+            
+            // Play the video
+            await video.play();
             
             // Wait for video to load
             await new Promise((resolve, reject) => {
