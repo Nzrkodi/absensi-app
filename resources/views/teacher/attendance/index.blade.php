@@ -232,21 +232,15 @@
                     </h6>
                     
                     <div class="row text-center">
-                        <div class="col-4">
+                        <div class="col-6">
                             <div class="border-end">
                                 <small class="text-muted d-block">Jam Masuk</small>
                                 <strong>{{ $settings['school_start_time'] ?? '07:00' }}</strong>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <div class="border-end">
-                                <small class="text-muted d-block">Jam Pulang</small>
-                                <strong>{{ $settings['school_end_time'] ?? '15:00' }}</strong>
-                            </div>
-                        </div>
-                        <div class="col-4">
-                            <small class="text-muted d-block">Toleransi</small>
-                            <strong>{{ $settings['late_tolerance_minutes'] ?? '15' }} menit</strong>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Jam Pulang</small>
+                            <strong>{{ $settings['school_end_time'] ?? '15:00' }}</strong>
                         </div>
                     </div>
                 </div>
