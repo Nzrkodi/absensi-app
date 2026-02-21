@@ -162,14 +162,14 @@
                     
                     <!-- Take Photo Button - MANDATORY Face Detection -->
                     <button type="button" class="btn btn-primary btn-lg w-100 mb-3" onclick="attendanceMobile.capturePhoto()">
-                        <i class="fas fa-user-check me-2"></i>
-                        Ambil Foto dengan Verifikasi Wajah
+                        <i class="fas fa-camera me-2"></i>
+                        Ambil Foto Absensi
                     </button>
                     
                     <div class="alert alert-info border-0 mb-3">
                         <small>
                             <i class="fas fa-info-circle me-1"></i>
-                            <strong>Wajib:</strong> Sistem akan memverifikasi wajah Anda sebelum foto dapat digunakan untuk absensi.
+                            Ambil foto untuk melengkapi absensi Anda.
                         </small>
                     </div>
                     
@@ -450,21 +450,8 @@ async function clockIn() {
     formData.append('latitude', attendanceMobile.currentPosition.latitude);
     formData.append('longitude', attendanceMobile.currentPosition.longitude);
     
-    // Add face validation flag - MANDATORY for attendance
-    if (attendanceMobile.photoBlob && attendanceMobile.photoBlob.faceValidation) {
-        formData.append('face_validation', 'true');
-        console.log('Sending face validation data:', attendanceMobile.photoBlob.faceValidation);
-    } else {
-        // If no face validation, reject the request
-        loadingModal.hide();
-        Swal.fire({
-            icon: 'error',
-            title: 'Verifikasi Wajah Diperlukan',
-            text: 'Foto harus diambil dengan verifikasi wajah. Silakan ambil foto ulang menggunakan sistem deteksi wajah.',
-            confirmButtonText: 'OK'
-        });
-        return;
-    }
+    // No face validation required - simple photo capture
+    console.log('Sending photo without face validation');
     
     try {
         const response = await fetch('{{ route("student.attendance.clock-in") }}', {
@@ -561,21 +548,8 @@ async function clockOut() {
     formData.append('latitude', attendanceMobile.currentPosition.latitude);
     formData.append('longitude', attendanceMobile.currentPosition.longitude);
     
-    // Add face validation flag - MANDATORY for attendance
-    if (attendanceMobile.photoBlob && attendanceMobile.photoBlob.faceValidation) {
-        formData.append('face_validation', 'true');
-        console.log('Sending face validation data for clock out:', attendanceMobile.photoBlob.faceValidation);
-    } else {
-        // If no face validation, reject the request
-        loadingModal.hide();
-        Swal.fire({
-            icon: 'error',
-            title: 'Verifikasi Wajah Diperlukan',
-            text: 'Foto harus diambil dengan verifikasi wajah. Silakan ambil foto ulang menggunakan sistem deteksi wajah.',
-            confirmButtonText: 'OK'
-        });
-        return;
-    }
+    // No face validation required - simple photo capture
+    console.log('Sending photo without face validation for clock out');
     
     try {
         const response = await fetch('{{ route("student.attendance.clock-out") }}', {
