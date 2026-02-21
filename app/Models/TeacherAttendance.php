@@ -102,4 +102,12 @@ class TeacherAttendance extends Model
         
         return sprintf('%d jam %d menit', $hours, $mins);
     }
+    
+    /**
+     * Get formatted work duration (method version)
+     */
+    public function getWorkDurationFormatted()
+    {
+        return $this->formatted_work_duration;
+    }
 }
