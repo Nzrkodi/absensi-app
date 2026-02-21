@@ -220,22 +220,13 @@ class AttendanceMobile {
         return R * c;
     }
 
-    // Ambil foto dari kamera dengan face detection WAJIB
+    // Ambil foto dari kamera (tanpa face detection)
     async capturePhoto() {
         try {
-            console.log('Starting photo capture with MANDATORY face detection...');
+            console.log('Starting photo capture with basic camera...');
             
-            // Initialize face detection camera - WAJIB untuk absensi
-            if (!this.faceCamera) {
-                console.log('Creating new FaceDetectionCamera instance...');
-                this.faceCamera = new FaceDetectionCamera();
-                
-                // Wait for initialization
-                await new Promise(resolve => setTimeout(resolve, 1000));
-            }
-
-            // Show face detection camera modal (WAJIB)
-            this.showMandatoryFaceDetectionModal();
+            // Show basic camera modal (no face detection)
+            this.showBasicCameraModal();
             
         } catch (error) {
             console.error('Camera error:', error);
@@ -248,6 +239,228 @@ class AttendanceMobile {
             } else {
                 alert('Tidak dapat mengakses kamera. Pastikan izin kamera sudah diberikan dan tidak ada aplikasi lain yang menggunakan kamera.');
             }
+        }
+    }
+
+    // Modal kamera biasa tanpa face detection
+    showBasicCameraModal() {
+        const modal = document.createElement('div');
+        modal.className = 'modal fade show';
+        modal.style.display = 'block';
+        modal.style.zIndex = '9999';
+        modal.innerHTML = `
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-camera me-2"></i>
+                            Ambil Foto Absensi
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" onclick="attendanceMobile.closeBasicCameraModal()"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <!-- Camera Container -->
+                        <div id="basicCameraContainer" style="display: none; position: relative;">
+                            <video id="basicCameraVideo" class="w-100" autoplay muted playsinline style="border-radius: 10px;"></video>
+                        </div>
+                        
+                        <!-- Photo Preview -->
+                        <div id="basicPhotoPreview" style="display: none;" class="text-center p-3">
+                            <img id="basicCapturedPhoto" class="img-fluid rounded shadow" style="max-height: 70vh;">
+                        </div>
+                        
+                        <!-- Loading State -->
+                        <div id="basicCameraLoading" class="text-center p-5">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="text-muted">Memulai kamera...</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" onclick="attendanceMobile.closeBasicCameraModal()">
+                            <i class="fas fa-times me-2"></i>Batal
+                        </button>
+                        <button type="button" id="basicCaptureBtn" class="btn btn-primary" style="display: none;">
+                            <i class="fas fa-camera me-2"></i>Ambil Foto
+                        </button>
+                        <button type="button" id="basicRetakeBtn" class="btn btn-warning" style="display: none;">
+                            <i class="fas fa-redo me-2"></i>Ambil Ulang
+                        </button>
+                        <button type="button" id="basicUsePhotoBtn" class="btn btn-success" style="display: none;">
+                            <i class="fas fa-check me-2"></i>Gunakan Foto
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(modal);
+        this.currentModal = modal;
+        
+        // Initialize basic camera
+        this.initializeBasicCamera(modal);
+    }
+
+    async initializeBasicCamera(modal) {
+        console.log('Initializing basic camera...');
+        
+        const video = modal.querySelector('#basicCameraVideo');
+        const loading = modal.querySelector('#basicCameraLoading');
+        const cameraContainer = modal.querySelector('#basicCameraContainer');
+        const captureBtn = modal.querySelector('#basicCaptureBtn');
+        
+        try {
+            // Request camera access
+            const constraints = {
+                video: {
+                    facingMode: 'user',
+                    width: { ideal: 1280, max: 1920 },
+                    height: { ideal: 720, max: 1080 }
+                },
+                audio: false
+            };
+            
+            console.log('Requesting camera access...');
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            
+            video.srcObject = stream;
+            this.currentStream = stream;
+            
+            // Wait for video to be ready
+            await new Promise((resolve, reject) => {
+                const timeout = setTimeout(() => {
+                    reject(new Error('Video load timeout'));
+                }, 30000);
+                
+                video.onloadedmetadata = async () => {
+                    try {
+                        console.log('Video metadata loaded');
+                        await video.play();
+                        console.log('Video playing successfully');
+                        
+                        clearTimeout(timeout);
+                        resolve();
+                    } catch (error) {
+                        console.error('Video play error:', error);
+                        clearTimeout(timeout);
+                        reject(error);
+                    }
+                };
+                
+                video.onerror = (error) => {
+                    console.error('Video load error:', error);
+                    clearTimeout(timeout);
+                    reject(error);
+                };
+            });
+            
+            // Hide loading, show camera
+            loading.style.display = 'none';
+            cameraContainer.style.display = 'block';
+            captureBtn.style.display = 'inline-block';
+            
+            // Setup event listeners
+            this.setupBasicCameraEventListeners(modal);
+            
+            console.log('Basic camera initialized successfully');
+            
+        } catch (error) {
+            console.error('Basic camera initialization error:', error);
+            loading.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Gagal mengakses kamera: ${error.message}
+                </div>
+                <button class="btn btn-primary" onclick="attendanceMobile.closeBasicCameraModal()">Tutup</button>
+            `;
+        }
+    }
+
+    setupBasicCameraEventListeners(modal) {
+        const captureBtn = modal.querySelector('#basicCaptureBtn');
+        const retakeBtn = modal.querySelector('#basicRetakeBtn');
+        const usePhotoBtn = modal.querySelector('#basicUsePhotoBtn');
+        
+        captureBtn.onclick = () => this.captureBasicPhoto(modal);
+        retakeBtn.onclick = () => this.retakeBasicPhoto(modal);
+        usePhotoBtn.onclick = () => this.useBasicPhoto(modal);
+    }
+
+    captureBasicPhoto(modal) {
+        const video = modal.querySelector('#basicCameraVideo');
+        const canvas = document.createElement('canvas');
+        const preview = modal.querySelector('#basicPhotoPreview');
+        const previewImg = modal.querySelector('#basicCapturedPhoto');
+        const cameraContainer = modal.querySelector('#basicCameraContainer');
+        const captureBtn = modal.querySelector('#basicCaptureBtn');
+        const retakeBtn = modal.querySelector('#basicRetakeBtn');
+        const usePhotoBtn = modal.querySelector('#basicUsePhotoBtn');
+        
+        // Set canvas size to match video
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        
+        // Draw video frame to canvas
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        // Convert to base64
+        this.capturedPhotoData = canvas.toDataURL('image/jpeg', 0.9);
+        
+        // Show preview
+        previewImg.src = this.capturedPhotoData;
+        cameraContainer.style.display = 'none';
+        preview.style.display = 'block';
+        
+        // Update buttons
+        captureBtn.style.display = 'none';
+        retakeBtn.style.display = 'inline-block';
+        usePhotoBtn.style.display = 'inline-block';
+        
+        console.log('Photo captured successfully');
+    }
+
+    retakeBasicPhoto(modal) {
+        const preview = modal.querySelector('#basicPhotoPreview');
+        const cameraContainer = modal.querySelector('#basicCameraContainer');
+        const captureBtn = modal.querySelector('#basicCaptureBtn');
+        const retakeBtn = modal.querySelector('#basicRetakeBtn');
+        const usePhotoBtn = modal.querySelector('#basicUsePhotoBtn');
+        
+        // Show camera again
+        preview.style.display = 'none';
+        cameraContainer.style.display = 'block';
+        
+        // Update buttons
+        captureBtn.style.display = 'inline-block';
+        retakeBtn.style.display = 'none';
+        usePhotoBtn.style.display = 'none';
+        
+        this.capturedPhotoData = null;
+    }
+
+    useBasicPhoto(modal) {
+        // Update UI to show photo is captured
+        const photoStatus = document.getElementById('photoStatus');
+        if (photoStatus) {
+            photoStatus.innerHTML = '<i class="fas fa-camera text-success me-2"></i>Foto berhasil diambil';
+        }
+        
+        this.closeBasicCameraModal();
+    }
+
+    closeBasicCameraModal() {
+        // Stop camera stream
+        if (this.currentStream) {
+            this.currentStream.getTracks().forEach(track => track.stop());
+            this.currentStream = null;
+        }
+        
+        // Remove modal
+        if (this.currentModal) {
+            this.currentModal.remove();
+            this.currentModal = null;
         }
     }
 
