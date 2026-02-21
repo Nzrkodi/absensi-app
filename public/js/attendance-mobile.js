@@ -461,19 +461,33 @@ class AttendanceMobile {
             video.srcObject = stream;
             this.currentStream = stream;
             
-            // Play the video
-            await video.play();
-            
-            // Wait for video to load
+            // Wait for video to be ready
             await new Promise((resolve, reject) => {
-                video.onloadedmetadata = () => {
-                    // Set canvas size
-                    canvas.width = video.videoWidth;
-                    canvas.height = video.videoHeight;
-                    resolve();
+                const timeout = setTimeout(() => {
+                    reject(new Error('Video load timeout'));
+                }, 30000); // 30 seconds timeout
+                
+                video.onloadedmetadata = async () => {
+                    try {
+                        // Play the video
+                        await video.play();
+                        
+                        // Set canvas size
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        
+                        clearTimeout(timeout);
+                        resolve();
+                    } catch (error) {
+                        clearTimeout(timeout);
+                        reject(error);
+                    }
                 };
-                video.onerror = reject;
-                setTimeout(() => reject(new Error('Video load timeout')), 10000);
+                
+                video.onerror = (error) => {
+                    clearTimeout(timeout);
+                    reject(error);
+                };
             });
             
             // Start simple face detection
@@ -665,23 +679,33 @@ class AttendanceMobile {
             video.srcObject = stream;
             this.currentStream = stream;
             
-            // Play the video
-            await video.play();
-            
-            // Wait for video to load
+            // Wait for video to be ready
             await new Promise((resolve, reject) => {
-                video.onloadedmetadata = () => {
-                    console.log('Video loaded successfully');
-                    resolve();
-                };
-                video.onerror = (error) => {
-                    console.error('Video load error:', error);
-                    reject(error);
+                const timeout = setTimeout(() => {
+                    reject(new Error('Video load timeout'));
+                }, 30000); // 30 seconds timeout
+                
+                video.onloadedmetadata = async () => {
+                    try {
+                        console.log('Video metadata loaded');
+                        // Play the video
+                        await video.play();
+                        console.log('Video playing successfully');
+                        
+                        clearTimeout(timeout);
+                        resolve();
+                    } catch (error) {
+                        console.error('Video play error:', error);
+                        clearTimeout(timeout);
+                        reject(error);
+                    }
                 };
                 
-                setTimeout(() => {
-                    reject(new Error('Video load timeout'));
-                }, 10000);
+                video.onerror = (error) => {
+                    console.error('Video load error:', error);
+                    clearTimeout(timeout);
+                    reject(error);
+                };
             });
             
             // Hide loading, show camera
@@ -1411,24 +1435,33 @@ class AttendanceMobile {
             video.style.display = 'block';
             canvas.style.display = 'none';
             
-            // Play the video
-            await video.play();
-            
-            // Wait for video to load
+            // Wait for video to be ready
             await new Promise((resolve, reject) => {
-                video.onloadedmetadata = () => {
-                    console.log('Video loaded successfully');
-                    resolve();
-                };
-                video.onerror = (error) => {
-                    console.error('Video load error:', error);
-                    reject(error);
+                const timeout = setTimeout(() => {
+                    reject(new Error('Video load timeout'));
+                }, 30000); // 30 seconds timeout
+                
+                video.onloadedmetadata = async () => {
+                    try {
+                        console.log('Video metadata loaded');
+                        // Play the video
+                        await video.play();
+                        console.log('Video playing successfully');
+                        
+                        clearTimeout(timeout);
+                        resolve();
+                    } catch (error) {
+                        console.error('Video play error:', error);
+                        clearTimeout(timeout);
+                        reject(error);
+                    }
                 };
                 
-                // Timeout after 10 seconds
-                setTimeout(() => {
-                    reject(new Error('Video load timeout'));
-                }, 10000);
+                video.onerror = (error) => {
+                    console.error('Video load error:', error);
+                    clearTimeout(timeout);
+                    reject(error);
+                };
             });
             
             // Hide loading, show camera
