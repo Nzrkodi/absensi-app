@@ -298,8 +298,10 @@ class AttendanceMobile {
         document.body.appendChild(modal);
         this.currentModal = modal;
         
-        // Initialize basic camera
-        this.initializeBasicCamera(modal);
+        // Wait for modal to be rendered in DOM before initializing camera
+        setTimeout(() => {
+            this.initializeBasicCamera(modal);
+        }, 100);
     }
 
     async initializeBasicCamera(modal) {
@@ -309,6 +311,23 @@ class AttendanceMobile {
         const loading = modal.querySelector('#basicCameraLoading');
         const cameraContainer = modal.querySelector('#basicCameraContainer');
         const captureBtn = modal.querySelector('#basicCaptureBtn');
+        
+        // Check if elements exist
+        if (!video) {
+            console.error('Video element not found!');
+            if (loading) {
+                loading.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Error: Video element tidak ditemukan
+                    </div>
+                    <button class="btn btn-primary" onclick="attendanceMobile.closeBasicCameraModal()">Tutup</button>
+                `;
+            }
+            return;
+        }
+        
+        console.log('Video element found:', video);
         
         try {
             // Request camera access
