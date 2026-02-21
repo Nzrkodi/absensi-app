@@ -441,6 +441,12 @@ class AttendanceMobile {
             // Create simple face detector
             this.simpleFaceDetector = new SimpleFaceDetection();
             
+            // Wait for initialization
+            const isSupported = await this.simpleFaceDetector.waitForInitialization();
+            if (!isSupported) {
+                throw new Error('Face detection not supported in this browser');
+            }
+            
             // Start camera
             const constraints = {
                 video: {

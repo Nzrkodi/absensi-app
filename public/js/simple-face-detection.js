@@ -15,7 +15,14 @@ class SimpleFaceDetection {
         this.detectionCount = 0;
         this.requiredDetections = 3;
         
-        this.initializeFaceDetector();
+        // Store initialization promise
+        this.initPromise = this.initializeFaceDetector();
+    }
+    
+    // Wait for initialization to complete
+    async waitForInitialization() {
+        await this.initPromise;
+        return this.isSupported;
     }
 
     async initializeFaceDetector() {
