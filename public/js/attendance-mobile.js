@@ -842,7 +842,7 @@ class AttendanceMobile {
                         
                         <!-- Camera Container -->
                         <div id="simpleCameraContainer" style="display: none; position: relative;">
-                            <video id="simpleCameraVideo" class="w-100" autoplay muted playsinline style="border-radius: 10px;"></video>
+                            <video id="simpleCameraVideo" class="w-100" autoplay muted playsinline style="transform: scaleX(-1); border-radius: 10px;"></video>
                             
                             <!-- Camera Controls Overlay -->
                             <div class="position-absolute top-0 end-0 p-3" style="z-index: 10;">
@@ -854,7 +854,7 @@ class AttendanceMobile {
                             <!-- Info Overlay -->
                             <div class="position-absolute bottom-0 start-0 end-0 p-3" style="z-index: 10;">
                                 <div class="bg-dark bg-opacity-75 text-white px-3 py-2 rounded text-center">
-                                    <small><i class="fas fa-info-circle me-1"></i>Klik tombol <i class="fas fa-sync-alt"></i> untuk mode mirror</small>
+                                    <small><i class="fas fa-info-circle me-1"></i>Klik tombol <i class="fas fa-sync-alt"></i> untuk mode normal</small>
                                 </div>
                             </div>
                         </div>
