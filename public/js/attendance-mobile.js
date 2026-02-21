@@ -321,8 +321,16 @@ class AttendanceMobile {
                 audio: false
             };
             
-            console.log('Requesting camera access...');
-            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            console.log('Requesting camera access with constraints:', constraints);
+            
+            // Add timeout for getUserMedia
+            const streamPromise = navigator.mediaDevices.getUserMedia(constraints);
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Camera access timeout')), 15000)
+            );
+            
+            const stream = await Promise.race([streamPromise, timeoutPromise]);
+            console.log('Camera stream obtained:', stream);
             
             video.srcObject = stream;
             this.currentStream = stream;
@@ -330,12 +338,13 @@ class AttendanceMobile {
             // Wait for video to be ready
             await new Promise((resolve, reject) => {
                 const timeout = setTimeout(() => {
+                    console.error('Video metadata load timeout');
                     reject(new Error('Video load timeout'));
-                }, 30000);
+                }, 10000);
                 
                 video.onloadedmetadata = async () => {
                     try {
-                        console.log('Video metadata loaded');
+                        console.log('Video metadata loaded, dimensions:', video.videoWidth, 'x', video.videoHeight);
                         await video.play();
                         console.log('Video playing successfully');
                         
