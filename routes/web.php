@@ -97,6 +97,8 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         
         // Teacher Report routes (admin only)
         Route::get('/teacher-reports', [\App\Http\Controllers\Admin\TeacherReportController::class, 'index'])->name('teacher-reports.index');
+        Route::get('/teacher-reports/preview', [\App\Http\Controllers\Admin\TeacherReportController::class, 'preview'])->name('teacher-reports.preview');
+        Route::get('/teacher-reports/export', [\App\Http\Controllers\Admin\TeacherReportController::class, 'export'])->name('teacher-reports.export');
         
         // Student management (admin only)
         Route::delete('students/delete-all', [StudentController::class, 'deleteAll'])->name('students.delete-all');

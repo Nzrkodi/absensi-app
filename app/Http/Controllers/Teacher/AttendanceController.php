@@ -119,8 +119,8 @@ class AttendanceController extends Controller
             'teacher'
         );
         
-        // Determine status - for teachers, always present (no late status)
-        $status = 'present';
+        // Determine status - for teachers, always hadir (no late status)
+        $status = 'hadir';
         
         // Create or update attendance
         $attendanceData = [
