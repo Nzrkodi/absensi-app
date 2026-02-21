@@ -6,6 +6,8 @@ use App\Http\Controllers\Admin\AttendanceController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\ProfileController;
+use App\Http\Controllers\Admin\TeacherController;
+use App\Http\Controllers\Admin\TeacherAttendanceController;
 use App\Http\Controllers\Auth\LoginController;
 
 /*
@@ -101,6 +103,19 @@ Route::prefix('admin')->name('admin.')->middleware('auth')->group(function () {
         Route::post('students/import', [StudentController::class, 'import'])->name('students.import');
         Route::get('students/template/download', [StudentController::class, 'downloadTemplate'])->name('students.template');
         
+        // Teacher management (admin only)
+        Route::post('teachers/bulk-delete', [TeacherController::class, 'bulkDelete'])->name('teachers.bulk-delete');
+        Route::post('teachers/bulk-update-status', [TeacherController::class, 'bulkUpdateStatus'])->name('teachers.bulk-update-status');
+        Route::resource('teachers', TeacherController::class);
+        
+        // Teacher Attendance routes (admin only)
+        Route::get('/teacher-attendance', [TeacherAttendanceController::class, 'index'])->name('teacher-attendance.index');
+        Route::post('/teacher-attendance/{teacher}/clock-in', [TeacherAttendanceController::class, 'clockIn'])->name('teacher-attendance.clock-in');
+        Route::post('/teacher-attendance/{teacher}/clock-out', [TeacherAttendanceController::class, 'clockOut'])->name('teacher-attendance.clock-out');
+        Route::post('/teacher-attendance/{teacher}/note', [TeacherAttendanceController::class, 'updateNote'])->name('teacher-attendance.note');
+        Route::post('/teacher-attendance/{teacher}/bulk-permission', [TeacherAttendanceController::class, 'bulkPermission'])->name('teacher-attendance.bulk-permission');
+        Route::get('/teacher-attendance/{attendance}/detail', [TeacherAttendanceController::class, 'getAttendanceDetail'])->name('teacher-attendance.detail');
+        
         // User management (admin only)
         Route::resource('users', UserController::class)->middleware('protect.admin');
         
@@ -134,6 +149,19 @@ Route::prefix('student')->name('student.')->group(function () {
     Route::get('/attendance', [\App\Http\Controllers\Student\AttendanceController::class, 'index'])->name('attendance.index');
     Route::post('/attendance/clock-in', [\App\Http\Controllers\Student\AttendanceController::class, 'clockIn'])->name('attendance.clock-in');
     Route::post('/attendance/clock-out', [\App\Http\Controllers\Student\AttendanceController::class, 'clockOut'])->name('attendance.clock-out');
+});
+
+// Teacher Routes (Mobile Attendance)
+Route::prefix('teacher')->name('teacher.')->group(function () {
+    // Login routes
+    Route::get('/login', [\App\Http\Controllers\Teacher\LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [\App\Http\Controllers\Teacher\LoginController::class, 'login'])->name('login.submit');
+    Route::get('/logout', [\App\Http\Controllers\Teacher\LoginController::class, 'logout'])->name('logout');
+    
+    // Attendance routes (require teacher session)
+    Route::get('/attendance', [\App\Http\Controllers\Teacher\AttendanceController::class, 'index'])->name('attendance.index');
+    Route::post('/attendance/clock-in', [\App\Http\Controllers\Teacher\AttendanceController::class, 'clockIn'])->name('attendance.clock-in');
+    Route::post('/attendance/clock-out', [\App\Http\Controllers\Teacher\AttendanceController::class, 'clockOut'])->name('attendance.clock-out');
 });
 
 // API Routes for mobile/AJAX

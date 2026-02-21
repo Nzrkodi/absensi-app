@@ -7,18 +7,18 @@
     <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card border-0 shadow-sm bg-primary text-white">
+            <div class="card border-0 shadow-sm bg-success text-white">
                 <div class="card-body text-center py-4">
                     <div class="d-flex justify-content-between align-items-start mb-2">
                         <div></div>
                         <div class="text-center flex-grow-1">
                             <h4 class="mb-1">
-                                <i class="fas fa-user-clock me-2"></i>
-                                Absensi Mobile
+                                <i class="fas fa-chalkboard-teacher me-2"></i>
+                                Absensi Guru
                             </h4>
                         </div>
                         <div>
-                            <a href="{{ route('student.logout') }}" 
+                            <a href="{{ route('teacher.logout') }}" 
                                class="btn btn-outline-light btn-sm"
                                onclick="return confirm('Yakin ingin keluar?')">
                                 <i class="fas fa-sign-out-alt"></i>
@@ -31,20 +31,20 @@
         </div>
     </div>
 
-    <!-- Student Info -->
+    <!-- Teacher Info -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="card border-0 shadow-sm">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="bg-light rounded-circle p-3 me-3">
-                            <i class="fas fa-user fa-2x text-primary"></i>
+                            <i class="fas fa-chalkboard-teacher fa-2x text-success"></i>
                         </div>
                         <div>
-                            <h5 class="mb-1">{{ $student->name }}</h5>
+                            <h5 class="mb-1">{{ $teacher->name }}</h5>
                             <p class="text-muted mb-0">
-                                <small>NISN: {{ $student->nisn }}</small><br>
-                                <small>Kelas: {{ $student->kelas ?? 'Tidak ada kelas' }}</small>
+                                <small>Email: {{ $teacher->email }}</small><br>
+                                <small>Jabatan: {{ $teacher->jabatan ?? '-' }}</small>
                             </p>
                         </div>
                     </div>
@@ -72,18 +72,14 @@
 
     <!-- Status Cards -->
     <div class="row mb-4">
-        <div class="col-6">
+        <div class="col-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body text-center">
                     @if($attendance && $attendance->clock_in)
                         <i class="fas fa-check-circle fa-3x text-success mb-2"></i>
                         <h6 class="text-success mb-1">Masuk</h6>
                         <small class="text-muted">{{ \Carbon\Carbon::parse($attendance->clock_in)->format('H:i') }}</small>
-                        @if($attendance->status === 'late')
-                            <br><span class="badge bg-warning text-dark mt-1">Terlambat</span>
-                        @else
-                            <br><span class="badge bg-success mt-1">Tepat Waktu</span>
-                        @endif
+                        <br><span class="badge bg-success mt-1">Hadir</span>
                     @else
                         <i class="fas fa-clock fa-3x text-muted mb-2"></i>
                         <h6 class="text-muted mb-1">Belum Masuk</h6>
@@ -92,7 +88,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6">
+        <div class="col-4">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body text-center">
                     @if($attendance && $attendance->clock_out)
@@ -103,6 +99,21 @@
                         <i class="fas fa-clock fa-3x text-muted mb-2"></i>
                         <h6 class="text-muted mb-1">Belum Pulang</h6>
                         <small class="text-muted">--:--</small>
+                    @endif
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center">
+                    @if($attendance && $attendance->clock_in && $attendance->clock_out)
+                        <i class="fas fa-hourglass-half fa-3x text-info mb-2"></i>
+                        <h6 class="text-info mb-1">Durasi</h6>
+                        <small class="text-muted">{{ $attendance->formatted_work_duration }}</small>
+                    @else
+                        <i class="fas fa-hourglass fa-3x text-muted mb-2"></i>
+                        <h6 class="text-muted mb-1">Durasi</h6>
+                        <small class="text-muted">-</small>
                     @endif
                 </div>
             </div>
@@ -161,7 +172,7 @@
                     </h6>
                     
                     <!-- Take Photo Button - MANDATORY Face Detection -->
-                    <button type="button" class="btn btn-primary btn-lg w-100 mb-3" onclick="attendanceMobile.capturePhoto()">
+                    <button type="button" class="btn btn-success btn-lg w-100 mb-3" onclick="console.log('Button clicked'); if(window.attendanceMobile) { attendanceMobile.capturePhoto(); } else { alert('AttendanceMobile belum siap. Refresh halaman.'); }">
                         <i class="fas fa-user-check me-2"></i>
                         Ambil Foto dengan Verifikasi Wajah
                     </button>
@@ -187,7 +198,7 @@
                         @if($attendance && $attendance->clock_in && !$attendance->clock_out)
                         <!-- Clock Out Button -->
                         <div class="col-6">
-                            <button type="button" class="btn btn-danger btn-lg w-100" onclick="clockOut()" id="clockOutBtn">
+                            <button type="button" class="btn btn-warning btn-lg w-100" onclick="clockOut()" id="clockOutBtn">
                                 <i class="fas fa-sign-out-alt me-2"></i>
                                 Pulang
                             </button>
@@ -467,7 +478,7 @@ async function clockIn() {
     }
     
     try {
-        const response = await fetch('{{ route("student.attendance.clock-in") }}', {
+        const response = await fetch('{{ route("teacher.attendance.clock-in") }}', {
             method: 'POST',
             body: formData,
             headers: {
@@ -578,7 +589,7 @@ async function clockOut() {
     }
     
     try {
-        const response = await fetch('{{ route("student.attendance.clock-out") }}', {
+        const response = await fetch('{{ route("teacher.attendance.clock-out") }}', {
             method: 'POST',
             body: formData,
             headers: {

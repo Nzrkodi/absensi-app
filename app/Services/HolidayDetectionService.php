@@ -36,10 +36,11 @@ class HolidayDetectionService
      */
     public function isWeekend(Carbon $date): bool
     {
-        // Get weekend setting from database or default to Saturday-Sunday
-        $weekendDays = $this->getWeekendSettings();
+        // TEMPORARY: Disable weekend check for testing
+        // Uncomment line below to enable weekend detection
+        // return in_array($date->dayOfWeek, [0, 6]); // 0 = Sunday, 6 = Saturday
         
-        return in_array($date->dayOfWeek, $weekendDays);
+        return false; // Disabled for testing
     }
     
     /**

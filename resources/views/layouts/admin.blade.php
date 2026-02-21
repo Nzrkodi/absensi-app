@@ -512,26 +512,52 @@
                     <span class="nav-text">Dashboard</span>
                 </a>
                 
-                <a href="{{ route('admin.attendance.index') }}" 
-                   class="nav-link-sidebar {{ request()->routeIs('admin.attendance.*') ? 'active' : '' }}">
-                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
-                    </svg>
-                    <span class="nav-text">Absensi</span>
-                </a>
-                
                 <!-- Menu khusus admin -->
                 @if(auth()->check() && auth()->user()->role === 'admin')
                     <!-- Divider -->
                     <div class="nav-divider"></div>
                     
-                    <a href="{{ route('admin.students.index') }}" 
-                       class="nav-link-sidebar {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
-                        </svg>
-                        <span class="nav-text">Siswa</span>
-                    </a>
+                    <!-- Dropdown Menu Absensi -->
+                    <div class="nav-dropdown" onmouseenter="showDropdown('attendanceDropdown')" onmouseleave="hideDropdown('attendanceDropdown')">
+                        <a href="#" class="nav-link-sidebar nav-dropdown-toggle {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.teacher-attendance.*') ? 'active' : '' }}">
+                            <i class="fas fa-clipboard-check"></i>
+                            <span class="nav-text">Absensi</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <div class="nav-dropdown-menu" id="attendanceDropdown">
+                            <a href="{{ route('admin.attendance.index') }}" 
+                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.attendance.*') ? 'active' : '' }}">
+                                <i class="fas fa-user-graduate"></i>
+                                <span class="nav-text">Absensi Siswa</span>
+                            </a>
+                            <a href="{{ route('admin.teacher-attendance.index') }}" 
+                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.teacher-attendance.*') ? 'active' : '' }}">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <span class="nav-text">Absensi Guru</span>
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Dropdown Menu Data -->
+                    <div class="nav-dropdown" onmouseenter="showDropdown('dataDropdown')" onmouseleave="hideDropdown('dataDropdown')">
+                        <a href="#" class="nav-link-sidebar nav-dropdown-toggle {{ request()->routeIs('admin.students.*') || request()->routeIs('admin.teachers.*') ? 'active' : '' }}">
+                            <i class="fas fa-database"></i>
+                            <span class="nav-text">Data</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <div class="nav-dropdown-menu" id="dataDropdown">
+                            <a href="{{ route('admin.students.index') }}" 
+                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.students.*') ? 'active' : '' }}">
+                                <i class="fas fa-user-graduate"></i>
+                                <span class="nav-text">Data Siswa</span>
+                            </a>
+                            <a href="{{ route('admin.teachers.index') }}" 
+                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.teachers.*') ? 'active' : '' }}">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <span class="nav-text">Data Guru</span>
+                            </a>
+                        </div>
+                    </div>
                     
                     <!-- Dropdown Menu Pelanggaran -->
                     {{-- <div class="nav-dropdown" onmouseenter="showDropdown('violationDropdown')" onmouseleave="hideDropdown('violationDropdown')">

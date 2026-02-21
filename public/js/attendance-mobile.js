@@ -1044,23 +1044,6 @@ class AttendanceMobile {
         
         this.closeFaceDetectionModal();
     }
-        console.log('Retrying face detection initialization...');
-        
-        const modal = this.currentModal;
-        if (!modal) return;
-        
-        // Show loading again
-        modal.querySelector('#faceDetectionFailed').style.display = 'none';
-        modal.querySelector('#faceLoading').style.display = 'block';
-        
-        // Recreate face camera instance
-        this.faceCamera = new FaceDetectionCamera();
-        
-        // Wait a bit then try initialization
-        setTimeout(() => {
-            this.initializeMandatoryFaceDetection(modal);
-        }, 1000);
-    }
 
     // Remove fallback to simple camera - face detection is MANDATORY
     showSimpleCameraFallback() {
@@ -1553,4 +1536,7 @@ class AttendanceMobile {
     }
 }
 
-// AttendanceMobile class will be initialized from the blade template
+// Initialize AttendanceMobile when DOM is ready
+document.addEventListener('DOMContentLoaded', function() {
+    window.attendanceMobile = new AttendanceMobile();
+});
