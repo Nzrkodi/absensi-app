@@ -559,27 +559,6 @@
                         </div>
                     </div>
                     
-                    <!-- Dropdown Menu Pelanggaran -->
-                    {{-- <div class="nav-dropdown" onmouseenter="showDropdown('violationDropdown')" onmouseleave="hideDropdown('violationDropdown')">
-                        <a href="#" class="nav-link-sidebar nav-dropdown-toggle {{ request()->routeIs('admin.violation-types.*') || request()->routeIs('admin.student-violations.*') ? 'active' : '' }}">
-                            <i class="fas fa-exclamation-triangle"></i>
-                            <span class="nav-text">Pelanggaran</span>
-                            <i class="fas fa-chevron-down dropdown-arrow"></i>
-                        </a>
-                        <div class="nav-dropdown-menu" id="violationDropdown">
-                            <a href="{{ route('admin.violation-types.index') }}" 
-                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.violation-types.*') ? 'active' : '' }}">
-                                <i class="fas fa-list-alt"></i>
-                                <span class="nav-text">Jenis Pelanggaran</span>
-                            </a>
-                            <a href="{{ route('admin.student-violations.index') }}" 
-                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.student-violations.*') ? 'active' : '' }}">
-                                <i class="fas fa-clipboard-list"></i>
-                                <span class="nav-text">Data Pelanggaran</span>
-                            </a>
-                        </div>
-                    </div> --}}
-                    
                     <a href="{{ route('admin.users.index') }}" 
                        class="nav-link-sidebar {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -593,21 +572,22 @@
                     
                     <!-- Dropdown Menu Laporan -->
                     <div class="nav-dropdown" onmouseenter="showDropdown('reportDropdown')" onmouseleave="hideDropdown('reportDropdown')">
-                        <a href="#" class="nav-link-sidebar nav-dropdown-toggle {{ request()->routeIs('admin.reports.*') ? 'active' : '' }}">
+                        <a href="#" class="nav-link-sidebar nav-dropdown-toggle {{ request()->routeIs('admin.reports.*') || request()->routeIs('admin.teacher-reports.*') ? 'active' : '' }}">
                             <i class="fas fa-chart-bar"></i>
-                            <span class="nav-text">Laporan</span>
+                            <span class="nav-text">Rekapan</span>
                             <i class="fas fa-chevron-down dropdown-arrow"></i>
                         </a>
                         <div class="nav-dropdown-menu" id="reportDropdown">
                             <a href="{{ route('admin.reports.index') }}" 
                                class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.reports.index') ? 'active' : '' }}">
-                                <i class="fas fa-file-alt"></i>
-                                <span class="nav-text">Laporan Absensi</span>
+                                <i class="fas fa-user-graduate"></i>
+                                <span class="nav-text">Siswa</span>
                             </a>
-                            {{-- <a href="#" class="nav-link-sidebar nav-sub">
-                                <i class="fas fa-exclamation-circle"></i>
-                                <span class="nav-text">Laporan Pelanggaran</span>
-                            </a> --}}
+                            <a href="{{ route('admin.teacher-reports.index') }}" 
+                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.teacher-reports.index') ? 'active' : '' }}">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <span class="nav-text">Guru</span>
+                            </a>
                         </div>
                     </div>
                     
