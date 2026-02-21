@@ -1356,12 +1356,12 @@ function showAttendanceDetail(attendanceId) {
     modal.show();
     
     // Fetch attendance detail
-    fetch(`/admin/attendance/${attendanceId}/detail`)
+    fetch(`/admin/teacher-attendance/${attendanceId}/detail`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
                 const attendance = data.attendance;
-                const student = attendance.student;
+                const teacher = attendance.teacher;
                 
                 let photosHtml = '';
                 let locationHtml = '';
@@ -1477,24 +1477,24 @@ function showAttendanceDetail(attendanceId) {
                 
                 
                 content.innerHTML = `
-                    <!-- Student Info -->
+                    <!-- Teacher Info -->
                     <div class="card border-primary mb-3">
                         <div class="card-header bg-primary text-white">
-                            <h6 class="mb-0"><i class="fas fa-user me-2"></i>Informasi Siswa</h6>
+                            <h6 class="mb-0"><i class="fas fa-user me-2"></i>Informasi Guru</h6>
                         </div>
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-4">
                                     <strong>Nama:</strong><br>
-                                    <span class="text-muted">${student.name}</span>
+                                    <span class="text-muted">${teacher.name}</span>
                                 </div>
                                 <div class="col-md-4">
-                                    <strong>NISN:</strong><br>
-                                    <span class="text-muted">${student.nisn}</span>
+                                    <strong>Email:</strong><br>
+                                    <span class="text-muted">${teacher.email}</span>
                                 </div>
                                 <div class="col-md-4">
-                                    <strong>Kelas:</strong><br>
-                                    <span class="text-muted">${student.class?.name || '-'}</span>
+                                    <strong>Jabatan:</strong><br>
+                                    <span class="text-muted">${teacher.jabatan || '-'}</span>
                                 </div>
                             </div>
                             <div class="row mt-2">
