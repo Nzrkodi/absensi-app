@@ -1,69 +1,80 @@
-# Panduan Menjalankan Auto Absent Scheduler
+# Panduan Scheduler Auto Absent
 
-## Masalah
-Laravel scheduler membutuhkan cron job untuk berjalan otomatis. Di Windows, ini perlu setup khusus.
+## Cara Kerja
 
-## Solusi untuk Development/Testing
+Sistem auto absent berjalan otomatis setiap hari pada waktu yang ditentukan di pengaturan (`auto_absent_time`).
 
-### 1. Jalankan Manual (untuk testing)
+### Proses Otomatis:
+1. Scheduler Laravel cek setiap menit apakah sudah waktunya auto absent
+2. Jika waktu sekarang = `auto_absent_time`, maka:
+   - Job `UpdateAbsentStudents` dijalankan untuk menandai siswa yang tidak hadir
+   - Job `UpdateAbsentTeachers` dijalankan untuk menandai guru yang tidak hadir
+
+### Logika Auto Absent:
+
+**Untuk Siswa:**
+- Jika tidak ada record absensi → buat record baru dengan status `absent`
+- Jika ada record tapi tidak ada `clock_in` → update status jadi `absent`
+- Jika ada `clock_in` tapi tidak ada `clock_out` → update status jadi `bolos`
+
+**Untuk Guru:**
+- Jika tidak ada record absensi → buat record baru dengan status `alpha`
+- Jika ada record tapi tidak ada `clock_in` → update status jadi `alpha`
+- Status `izin` dan `sakit` tidak akan diubah
+
+## Menjalankan di Production
+
+### Opsi 1: Laravel Scheduler (Recommended)
+Jalankan command ini di background (gunakan supervisor atau screen):
 ```bash
-# Test job auto absent secara manual
+php artisan schedule:work
+```
+
+Command ini akan terus berjalan dan mengecek schedule setiap menit.
+
+### Opsi 2: Cron Job
+Tambahkan ke crontab:
+```bash
+* * * * * cd /path/to/project && php artisan schedule:run >> /dev/null 2>&1
+```
+
+## Testing Manual
+
+Untuk testing tanpa menunggu waktu auto absent:
+
+```bash
 php artisan attendance:update-absent
-
-# Jalankan queue worker untuk memproses job
-php artisan queue:work --once
 ```
 
-### 2. Jalankan Scheduler Manual
+Command ini akan langsung menjalankan job untuk siswa dan guru.
+
+## Troubleshooting
+
+### Job tidak jalan otomatis?
+1. Pastikan `schedule:work` atau cron job sudah berjalan
+2. Cek log: `tail -f storage/logs/laravel.log`
+3. Pastikan timezone sudah benar: `Asia/Makassar`
+
+### Status tidak berubah?
+1. Cek apakah hari ini adalah hari libur (job akan skip jika libur)
+2. Jalankan manual: `php artisan attendance:update-absent`
+3. Cek log untuk melihat berapa record yang diupdate
+
+### Melihat Log
 ```bash
-# Jalankan semua scheduled task yang due
-php artisan schedule:run
+# Lihat log terbaru
+tail -n 100 storage/logs/laravel.log
 
-# Lihat daftar scheduled task
-php artisan schedule:list
+# Filter log auto absent
+tail -n 100 storage/logs/laravel.log | grep "Auto absent"
 ```
 
-### 3. Untuk Production (Windows)
+## Konfigurasi
 
-#### Menggunakan Task Scheduler Windows:
-1. Buka Task Scheduler Windows
-2. Create Basic Task
-3. Set trigger: Daily pada waktu yang diinginkan
-4. Set action: Start a program
-5. Program: `php`
-6. Arguments: `artisan schedule:run`
-7. Start in: `C:\path\to\your\absensi-app`
+Waktu auto absent bisa diubah di halaman Pengaturan Admin atau langsung di database:
 
-#### Atau menggunakan batch file:
-Buat file `run_scheduler.bat`:
-```batch
-@echo off
-cd /d "C:\path\to\your\absensi-app"
-php artisan schedule:run
+```sql
+UPDATE settings SET value = '15:00' WHERE key = 'auto_absent_time';
 ```
 
-Lalu set Task Scheduler untuk menjalankan batch file ini setiap menit.
-
-## Cara Kerja Auto Absent
-
-1. **Waktu diatur di Settings** - Admin set waktu auto absent (misal 17:17)
-2. **Scheduler berjalan** - Laravel scheduler cek setiap hari pada waktu tersebut
-3. **Job dijalankan** - UpdateAbsentStudents job akan:
-   - Cek semua siswa aktif
-   - Siswa yang tidak clock in → status "absent"
-   - Siswa yang clock in tapi tidak clock out → status "bolos"
-   - Skip jika hari libur
-
-## Testing
-Untuk test apakah sistem bekerja:
-```bash
-# Test manual
-php test_auto_absent.php
-
-# Atau jalankan job langsung
-php artisan attendance:update-absent
-php artisan queue:work --once
-```
-
-## Log
-Cek log di `storage/logs/laravel.log` untuk melihat apakah scheduler berjalan.
+Format: `HH:MM` (24 jam)

@@ -41,6 +41,11 @@ class TeacherAttendance extends Model
     public function getStatusBadgeAttribute()
     {
         $badges = [
+            'hadir' => '<span class="badge bg-success">Hadir</span>',
+            'alpha' => '<span class="badge bg-danger">Tidak Hadir</span>',
+            'izin' => '<span class="badge bg-info">Izin</span>',
+            'sakit' => '<span class="badge bg-secondary">Sakit</span>',
+            // Legacy support (just in case)
             'present' => '<span class="badge bg-success">Hadir</span>',
             'late' => '<span class="badge bg-warning">Terlambat</span>',
             'absent' => '<span class="badge bg-danger">Tidak Hadir</span>',
@@ -48,7 +53,7 @@ class TeacherAttendance extends Model
             'sick' => '<span class="badge bg-secondary">Sakit</span>',
         ];
 
-        return $badges[$this->status] ?? '<span class="badge bg-light">Unknown</span>';
+        return $badges[$this->status] ?? '<span class="badge bg-light text-dark">Unknown</span>';
     }
 
     public function getClockInTimeAttribute()

@@ -517,27 +517,6 @@
                     <!-- Divider -->
                     <div class="nav-divider"></div>
                     
-                    <!-- Dropdown Menu Absensi -->
-                    <div class="nav-dropdown" onmouseenter="showDropdown('attendanceDropdown')" onmouseleave="hideDropdown('attendanceDropdown')">
-                        <a href="#" class="nav-link-sidebar nav-dropdown-toggle {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.teacher-attendance.*') ? 'active' : '' }}">
-                            <i class="fas fa-clipboard-check"></i>
-                            <span class="nav-text">Absensi</span>
-                            <i class="fas fa-chevron-down dropdown-arrow"></i>
-                        </a>
-                        <div class="nav-dropdown-menu" id="attendanceDropdown">
-                            <a href="{{ route('admin.attendance.index') }}" 
-                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.attendance.*') ? 'active' : '' }}">
-                                <i class="fas fa-user-graduate"></i>
-                                <span class="nav-text">Absensi Siswa</span>
-                            </a>
-                            <a href="{{ route('admin.teacher-attendance.index') }}" 
-                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.teacher-attendance.*') ? 'active' : '' }}">
-                                <i class="fas fa-chalkboard-teacher"></i>
-                                <span class="nav-text">Absensi Guru</span>
-                            </a>
-                        </div>
-                    </div>
-                    
                     <!-- Dropdown Menu Data -->
                     <div class="nav-dropdown" onmouseenter="showDropdown('dataDropdown')" onmouseleave="hideDropdown('dataDropdown')">
                         <a href="#" class="nav-link-sidebar nav-dropdown-toggle {{ request()->routeIs('admin.students.*') || request()->routeIs('admin.teachers.*') ? 'active' : '' }}">
@@ -558,17 +537,27 @@
                             </a>
                         </div>
                     </div>
-                    
-                    <a href="{{ route('admin.users.index') }}" 
-                       class="nav-link-sidebar {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
-                        <span class="nav-text">User</span>
-                    </a>
-                    
-                    <!-- Divider -->
-                    <div class="nav-divider"></div>
+
+                    <!-- Dropdown Menu Absensi -->
+                    <div class="nav-dropdown" onmouseenter="showDropdown('attendanceDropdown')" onmouseleave="hideDropdown('attendanceDropdown')">
+                        <a href="#" class="nav-link-sidebar nav-dropdown-toggle {{ request()->routeIs('admin.attendance.*') || request()->routeIs('admin.teacher-attendance.*') ? 'active' : '' }}">
+                            <i class="fas fa-clipboard-check"></i>
+                            <span class="nav-text">Absensi</span>
+                            <i class="fas fa-chevron-down dropdown-arrow"></i>
+                        </a>
+                        <div class="nav-dropdown-menu" id="attendanceDropdown">
+                            <a href="{{ route('admin.attendance.index') }}" 
+                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.attendance.*') ? 'active' : '' }}">
+                                <i class="fas fa-user-graduate"></i>
+                                <span class="nav-text">Absensi Siswa</span>
+                            </a>
+                            <a href="{{ route('admin.teacher-attendance.index') }}" 
+                               class="nav-link-sidebar nav-sub {{ request()->routeIs('admin.teacher-attendance.*') ? 'active' : '' }}">
+                                <i class="fas fa-chalkboard-teacher"></i>
+                                <span class="nav-text">Absensi Guru</span>
+                            </a>
+                        </div>
+                    </div>
                     
                     <!-- Dropdown Menu Laporan -->
                     <div class="nav-dropdown" onmouseenter="showDropdown('reportDropdown')" onmouseleave="hideDropdown('reportDropdown')">
@@ -591,6 +580,10 @@
                         </div>
                     </div>
                     
+                    <!-- Divider -->
+                    <div class="nav-divider"></div>
+                    
+                    
                     <a href="{{ route('admin.holidays.index') }}" 
                        class="nav-link-sidebar {{ request()->routeIs('admin.holidays.*') ? 'active' : '' }}">
                         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -612,6 +605,15 @@
                     <div class="nav-divider"></div>
                 @endif
                 
+                    
+                    <a href="{{ route('admin.users.index') }}" 
+                       class="nav-link-sidebar {{ request()->routeIs('admin.users.*') ? 'active' : '' }}">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                        </svg>
+                        <span class="nav-text">User</span>
+                    </a>
+
                 <!-- Menu pengaturan untuk semua role (tapi dengan akses berbeda) -->
                 <a href="{{ route('admin.settings.index') }}" 
                    class="nav-link-sidebar {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
